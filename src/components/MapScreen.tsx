@@ -4,6 +4,7 @@ import { Lock, Unlock, Star, Map as MapIcon, ChevronRight, Coins, Shield, BookOp
 import { UserState } from '../utils/storage';
 import { STAGES } from '../utils/stageData';
 import { playClickSound, playItemSound } from '../utils/sound';
+import { AlertModal, ConfirmModal } from './Dialog';
 
 type MapScreenProps = {
   state: UserState;
@@ -20,13 +21,15 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
   const y2 = useTransform(scrollY, [0, 1000], [0, -100]);
 
   const [selectedItem, setSelectedItem] = useState<{ id: keyof UserState['items'], name: string, desc: string } | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const handleItemClick = (itemId: keyof UserState['items'], name: string, desc: string) => {
     playClickSound();
     if (state.items[itemId] <= 0) return;
     
     if (itemId === 'shield') {
-      alert('수호의 방패는 전투 중 오답을 입력하면 자동으로 사용됩니다.');
+      setAlertMessage('수호의 방패는 전투 중 오답을 입력하면 자동으로 사용됩니다.');
       return;
     }
 
@@ -142,9 +145,18 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
             <button 
               onClick={() => { playClickSound(); onOpenSettings(); }}
               className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl transition-colors shadow-lg"
-              aria-label="설정"
+              title="설정"
             >
               <Settings className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={() => { 
+                playClickSound(); 
+                setConfirmLogout(true);
+              }}
+              className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors shadow-lg font-bold text-sm"
+            >
+              로그아웃
             </button>
           </div>
         </header>
@@ -296,6 +308,21 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
           )}
         </div>
       </div>
+
+      {alertMessage && (
+        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      )}
+
+      {confirmLogout && (
+        <ConfirmModal 
+          message="로그아웃 하시겠습니까? 초기 화면으로 돌아갑니다." 
+          onConfirm={() => {
+            localStorage.removeItem('math_expedition_state');
+            window.location.reload();
+          }} 
+          onClose={() => setConfirmLogout(false)} 
+        />
+      )}
     </div>
   );
 }

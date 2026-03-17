@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Settings2, Trash2, Unlock, Coins, BookX } from 'lucide-react';
 import { UserState } from '../utils/storage';
 import { playClickSound } from '../utils/sound';
+import { AlertModal, ConfirmModal } from './Dialog';
 
 type SettingsModalProps = {
   state: UserState;
@@ -12,39 +13,54 @@ type SettingsModalProps = {
 };
 
 export function SettingsModal({ state, setState, onClose, onSync }: SettingsModalProps) {
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ message: string, onConfirm: () => void } | null>(null);
+
   const handleResetAll = () => {
     playClickSound();
-    if (window.confirm('모든 데이터가 삭제됩니다. 정말 초기화하시겠습니까?')) {
-      localStorage.clear();
-      window.location.reload();
-    }
+    setConfirmAction({
+      message: '모든 데이터가 삭제됩니다. 정말 초기화하시겠습니까?',
+      onConfirm: () => {
+        localStorage.clear();
+        window.location.reload();
+      }
+    });
   };
 
   const handleClearWrongProblems = () => {
     playClickSound();
-    if (window.confirm('오답 노트를 비우시겠습니까?')) {
-      setState(prev => prev ? { ...prev, wrong_problems: [] } : prev);
-      if (onSync) onSync();
-      alert('오답 노트가 비워졌습니다.');
-    }
+    setConfirmAction({
+      message: '오답 노트를 비우시겠습니까?',
+      onConfirm: () => {
+        setState(prev => prev ? { ...prev, wrong_problems: [] } : prev);
+        if (onSync) onSync();
+        setTimeout(() => setAlertMessage('오답 노트가 비워졌습니다.'), 100);
+      }
+    });
   };
 
   const handleResetGold = () => {
     playClickSound();
-    if (window.confirm('골드를 0으로 초기화하시겠습니까?')) {
-      setState(prev => prev ? { ...prev, gold: 0 } : prev);
-      if (onSync) onSync();
-      alert('골드가 초기화되었습니다.');
-    }
+    setConfirmAction({
+      message: '골드를 0으로 초기화하시겠습니까?',
+      onConfirm: () => {
+        setState(prev => prev ? { ...prev, gold: 0 } : prev);
+        if (onSync) onSync();
+        setTimeout(() => setAlertMessage('골드가 초기화되었습니다.'), 100);
+      }
+    });
   };
 
   const handleUnlockAll = () => {
     playClickSound();
-    if (window.confirm('모든 스테이지를 잠금 해제하시겠습니까? (테스트 모드)')) {
-      setState(prev => prev ? { ...prev, unlocked_stages: [1, 2, 3, 4, 5, 6, 7, 8] } : prev);
-      if (onSync) onSync();
-      alert('모든 스테이지가 열렸습니다!');
-    }
+    setConfirmAction({
+      message: '모든 스테이지를 잠금 해제하시겠습니까? (테스트 모드)',
+      onConfirm: () => {
+        setState(prev => prev ? { ...prev, unlocked_stages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] } : prev);
+        if (onSync) onSync();
+        setTimeout(() => setAlertMessage('모든 스테이지가 열렸습니다!'), 100);
+      }
+    });
   };
 
   return (
@@ -108,6 +124,18 @@ export function SettingsModal({ state, setState, onClose, onSync }: SettingsModa
           </div>
         </div>
       </motion.div>
+
+      {alertMessage && (
+        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      )}
+
+      {confirmAction && (
+        <ConfirmModal 
+          message={confirmAction.message} 
+          onConfirm={confirmAction.onConfirm} 
+          onClose={() => setConfirmAction(null)} 
+        />
+      )}
     </div>
   );
 }

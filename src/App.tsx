@@ -6,6 +6,7 @@ import { ResultScreen } from './components/ResultScreen';
 import { ShopModal } from './components/ShopModal';
 import { ReviewScreen } from './components/ReviewScreen';
 import { SettingsModal } from './components/SettingsModal';
+import { AlertModal } from './components/Dialog';
 import { UserState, loadState, saveState, defaultState } from './utils/storage';
 import { Problem } from './utils/mathGenerator';
 import { playFanfare } from './utils/sound';
@@ -24,6 +25,7 @@ export default function App() {
   const [battleMode, setBattleMode] = useState<'normal' | 'review'>('normal');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncTrigger, setSyncTrigger] = useState(0);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadedState = loadState();
@@ -53,10 +55,7 @@ export default function App() {
       saveState(state); // Keep local backup
       if (syncTrigger > 0) {
         // Sync to Google Sheets in background
-        setIsSyncing(true);
-        syncUserData(state, state.total_score * 1.2).finally(() => {
-          setIsSyncing(false);
-        });
+        syncUserData(state, state.total_score * 1.2).catch(console.error);
       }
     }
   }, [state, syncTrigger]);
@@ -72,7 +71,7 @@ export default function App() {
       } else {
         const newState = { ...defaultState, nickname };
         setState(newState);
-        await syncUserData(newState);
+        syncUserData(newState).catch(console.error); // Do not await
       }
       setCurrentScreen('map');
     } catch (error) {
@@ -103,15 +102,15 @@ export default function App() {
       
       if (itemId === 'golden_key') {
         const nextStage = Math.max(...prev.unlocked_stages) + 1;
-        if (nextStage <= 8 && !prev.unlocked_stages.includes(nextStage)) {
-          alert(`황금 열쇠를 사용하여 Stage ${nextStage}이(가) 열렸습니다!`);
+        if (nextStage <= 15 && !prev.unlocked_stages.includes(nextStage)) {
+          setTimeout(() => setAlertMessage(`황금 열쇠를 사용하여 Stage ${nextStage}이(가) 열렸습니다!`), 100);
           return { ...prev, items: newItems, unlocked_stages: [...prev.unlocked_stages, nextStage] };
         } else {
-          alert('더 이상 열 수 있는 스테이지가 없습니다.');
+          setTimeout(() => setAlertMessage('더 이상 열 수 있는 스테이지가 없습니다.'), 100);
           return prev; // Don't consume key
         }
       } else if (itemId === 'xp_potion') {
-        alert('경험치 물약을 사용했습니다! 다음 10문제 동안 골드를 2배로 획득합니다.');
+        setTimeout(() => setAlertMessage('경험치 물약을 사용했습니다!\n다음 10문제 동안 골드를 2배로 획득합니다.'), 100);
         return { ...prev, items: newItems, doubleXpCharges: prev.doubleXpCharges + 10 };
       }
       
@@ -125,7 +124,7 @@ export default function App() {
     
     // Update state
     const isPassed = score >= 8;
-    const isNewStageUnlocked = isPassed && !state.unlocked_stages.includes(selectedStage + 1) && selectedStage < 8;
+    const isNewStageUnlocked = isPassed && !state.unlocked_stages.includes(selectedStage + 1) && selectedStage < 15;
     
     if (isNewStageUnlocked) {
       playFanfare();
@@ -182,6 +181,10 @@ export default function App() {
         </div>
       )}
 
+      {alertMessage && (
+        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      )}
+
       {currentScreen === 'welcome' && (
         <WelcomeScreen onStart={handleStart} />
       )}
@@ -222,7 +225,7 @@ export default function App() {
           score={lastScore}
           total={battleMode === 'review' ? state.wrong_problems.length : 10}
           stage={selectedStage}
-          isUnlockedNext={lastScore >= 8 && selectedStage < 8 && battleMode === 'normal'}
+          isUnlockedNext={lastScore >= 8 && selectedStage < 15 && battleMode === 'normal'}
           onNext={() => {
             setSelectedStage(s => s + 1);
             setCurrentScreen('battle');

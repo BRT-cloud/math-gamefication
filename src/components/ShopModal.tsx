@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Shield, Key, Droplet, Coins, FlaskConical } from 'lucide-react';
 import { UserState } from '../utils/storage';
 import { playCoinSound, playIncorrectSound, playClickSound } from '../utils/sound';
+import { AlertModal } from './Dialog';
 
 type ShopModalProps = {
   state: UserState;
@@ -20,6 +21,8 @@ const ITEMS = [
 ];
 
 export function ShopModal({ state, setState, onClose, onSync }: ShopModalProps) {
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
   const handleBuy = (item: typeof ITEMS[0]) => {
     if (state.gold >= item.price) {
       playCoinSound();
@@ -34,7 +37,7 @@ export function ShopModal({ state, setState, onClose, onSync }: ShopModalProps) 
       if (onSync) onSync();
     } else {
       playIncorrectSound();
-      alert('골드가 부족합니다!');
+      setAlertMessage('골드가 부족합니다!');
     }
   };
 
@@ -86,6 +89,10 @@ export function ShopModal({ state, setState, onClose, onSync }: ShopModalProps) 
           </div>
         </div>
       </motion.div>
+
+      {alertMessage && (
+        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      )}
     </div>
   );
 }

@@ -27,6 +27,32 @@ export function DynamicSVG({ type, params }: { type: string; params: any }) {
     return (
       <svg viewBox="0 0 100 100" className="w-32 h-32 mx-auto drop-shadow-md">
         <polygon points={points} fill={color.fill} stroke={color.stroke} strokeWidth="3" />
+        {params.label && params.label !== 'none' && (
+          <text x="50" y="95" fontSize="12" textAnchor="middle" fill={color.stroke} fontWeight="bold">{params.label}</text>
+        )}
+      </svg>
+    );
+  }
+
+  if (type === 'clock') {
+    const { hour, minute } = params;
+    const minuteAngle = (minute / 60) * 360 - 90;
+    const hourAngle = ((hour % 12) / 12) * 360 + (minute / 60) * 30 - 90;
+
+    return (
+      <svg viewBox="0 0 100 100" className="w-32 h-32 mx-auto drop-shadow-md">
+        <circle cx="50" cy="50" r="45" fill="white" stroke="#334155" strokeWidth="4" />
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = (i * 30 - 90) * (Math.PI / 180);
+          const x1 = 50 + 38 * Math.cos(angle);
+          const y1 = 50 + 38 * Math.sin(angle);
+          const x2 = 50 + 42 * Math.cos(angle);
+          const y2 = 50 + 42 * Math.sin(angle);
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#64748B" strokeWidth="2" />;
+        })}
+        <line x1="50" y1="50" x2={50 + 25 * Math.cos(hourAngle * Math.PI / 180)} y2={50 + 25 * Math.sin(hourAngle * Math.PI / 180)} stroke="#0F172A" strokeWidth="4" strokeLinecap="round" />
+        <line x1="50" y1="50" x2={50 + 35 * Math.cos(minuteAngle * Math.PI / 180)} y2={50 + 35 * Math.sin(minuteAngle * Math.PI / 180)} stroke="#334155" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="50" cy="50" r="3" fill="#EF4444" />
       </svg>
     );
   }

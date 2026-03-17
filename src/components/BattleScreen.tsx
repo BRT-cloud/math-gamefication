@@ -298,8 +298,8 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
         </div>
       )}
 
-      {/* Stage 8 Special Effects (Lightning & 3D Shapes) */}
-      {stage === 8 && (
+      {/* Stage 15 Special Effects (Lightning & 3D Shapes) */}
+      {stage === 15 && (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0 bg-indigo-900/40 mix-blend-overlay" />
           
