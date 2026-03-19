@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
-import { Lock, Unlock, Star, Map as MapIcon, ChevronRight, Coins, Shield, BookOpen, Store, Settings, Key, FlaskConical, CloudFog, X } from 'lucide-react';
+import { Lock, Unlock, Star, Map as MapIcon, ChevronRight, Coins, Shield, BookOpen, Store, Settings, Heart, Search, Magnet, Crown, CloudFog } from 'lucide-react';
 import { UserState } from '../utils/storage';
 import { STAGES } from '../utils/stageData';
 import { playClickSound, playItemSound } from '../utils/sound';
@@ -12,10 +12,9 @@ type MapScreenProps = {
   onOpenShop: () => void;
   onOpenReview: () => void;
   onOpenSettings: () => void;
-  onUseItem: (itemId: keyof UserState['items']) => void;
 };
 
-export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOpenSettings, onUseItem }: MapScreenProps) {
+export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOpenSettings }: MapScreenProps) {
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
   const y2 = useTransform(scrollY, [0, 1000], [0, -100]);
@@ -26,25 +25,12 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
 
   const handleItemClick = (itemId: keyof UserState['items'], name: string, desc: string) => {
     playClickSound();
-    if (state.items[itemId] <= 0) return;
-    
-    if (itemId === 'shield') {
-      setAlertMessage('수호의 방패는 전투 중 오답을 입력하면 자동으로 사용됩니다.');
-      return;
-    }
-
     setSelectedItem({ id: itemId, name, desc });
   };
 
-  const confirmUseItem = () => {
-    if (selectedItem) {
-      playItemSound();
-      onUseItem(selectedItem.id);
-      setSelectedItem(null);
-    }
-  };
-
-  const currentMaxStage = Math.max(...state.unlocked_stages);
+  const unlockedStageIndexes = state.unlocked_stages.map(id => STAGES.findIndex(s => s.id === id)).filter(idx => idx !== -1);
+  const maxStageIndex = unlockedStageIndexes.length > 0 ? Math.max(...unlockedStageIndexes) : 0;
+  const currentMaxStage = STAGES[maxStageIndex]?.id || 1;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-32 relative overflow-hidden">
@@ -97,13 +83,7 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
                   onClick={() => { playClickSound(); setSelectedItem(null); }}
                   className="flex-1 py-3 rounded-xl font-bold bg-slate-700 hover:bg-slate-600 text-white transition-colors"
                 >
-                  취소
-                </button>
-                <button
-                  onClick={confirmUseItem}
-                  className="flex-1 py-3 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition-colors shadow-lg shadow-emerald-500/20"
-                >
-                  사용하기
+                  닫기
                 </button>
               </div>
             </motion.div>
@@ -118,7 +98,10 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
               <MapIcon className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight drop-shadow-md">{state.nickname} 원정대원</h1>
+              <h1 className="text-2xl font-black tracking-tight drop-shadow-md flex items-center gap-2">
+                {state.nickname} 원정대원
+                {state.items.golden_crown > 0 && <Crown className="w-6 h-6 text-yellow-400 drop-shadow-md" />}
+              </h1>
               <p className="text-emerald-400 font-bold drop-shadow-md">총 점수: {state.total_score}점</p>
             </div>
           </div>
@@ -271,41 +254,42 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
           <div className="flex items-center gap-3 min-w-max">
             <span className="text-slate-400 font-bold mr-2 drop-shadow-md">인벤토리</span>
             
-            {/* Shield */}
+            {/* Heart Potion */}
             <button 
-              onClick={() => handleItemClick('shield', '수호의 방패', '전투 중 오답을 입력하면 자동으로 사용되어 하트를 보호합니다.')}
-              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.shield > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
+              onClick={() => handleItemClick('heart_potion', '하트 물약', '전투 중 사용하면 하트를 1개 회복합니다.')}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.heart_potion > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
             >
-              <Shield className={`w-5 h-5 ${state.items.shield > 0 ? 'text-cyan-400' : 'text-slate-600'}`} />
-              <span className="font-bold">x{state.items.shield}</span>
+              <Heart className={`w-5 h-5 ${state.items.heart_potion > 0 ? 'text-rose-500' : 'text-slate-600'}`} />
+              <span className="font-bold">x{state.items.heart_potion}</span>
             </button>
 
-            {/* Golden Key */}
+            {/* Sacred Shield */}
             <button 
-              onClick={() => handleItemClick('golden_key', '황금 열쇠', '다음 스테이지를 즉시 잠금 해제합니다.')}
-              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.golden_key > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
+              onClick={() => handleItemClick('sacred_shield', '신성한 방패', '전투 중 사용하면 다음 오답 시 하트 감소를 1회 막아줍니다.')}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.sacred_shield > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
             >
-              <Key className={`w-5 h-5 ${state.items.golden_key > 0 ? 'text-amber-400' : 'text-slate-600'}`} />
-              <span className="font-bold">x{state.items.golden_key}</span>
+              <Shield className={`w-5 h-5 ${state.items.sacred_shield > 0 ? 'text-sky-400' : 'text-slate-600'}`} />
+              <span className="font-bold">x{state.items.sacred_shield}</span>
             </button>
 
-            {/* XP Potion */}
+            {/* Magic Magnifier */}
             <button 
-              onClick={() => handleItemClick('xp_potion', '경험치 물약', '10문제 동안 획득하는 골드가 2배가 됩니다.')}
-              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.xp_potion > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
+              onClick={() => handleItemClick('magic_magnifier', '마법 돋보기', '전투 중 사용하면 문제의 힌트나 공식을 보여줍니다.')}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.magic_magnifier > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
             >
-              <FlaskConical className={`w-5 h-5 ${state.items.xp_potion > 0 ? 'text-purple-400' : 'text-slate-600'}`} />
-              <span className="font-bold">x{state.items.xp_potion}</span>
+              <Search className={`w-5 h-5 ${state.items.magic_magnifier > 0 ? 'text-emerald-400' : 'text-slate-600'}`} />
+              <span className="font-bold">x{state.items.magic_magnifier}</span>
+            </button>
+
+            {/* Lucky Horseshoe */}
+            <button 
+              onClick={() => handleItemClick('lucky_horseshoe', '행운의 편자', '전투 중 사용하면 다음 3문제 동안 획득하는 골드가 2배가 됩니다.')}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${state.items.lucky_horseshoe > 0 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-600 text-white cursor-pointer shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed grayscale'}`}
+            >
+              <Magnet className={`w-5 h-5 ${state.items.lucky_horseshoe > 0 ? 'text-amber-500' : 'text-slate-600'}`} />
+              <span className="font-bold">x{state.items.lucky_horseshoe}</span>
             </button>
           </div>
-
-          {/* Active Buffs */}
-          {state.doubleXpCharges > 0 && (
-            <div className="flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 px-4 py-2 rounded-xl text-purple-300 font-bold animate-pulse ml-4 min-w-max">
-              <FlaskConical className="w-5 h-5" />
-              <span>2배 버프: {state.doubleXpCharges}문제 남음</span>
-            </div>
-          )}
         </div>
       </div>
 

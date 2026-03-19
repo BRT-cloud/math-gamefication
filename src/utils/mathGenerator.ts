@@ -6,7 +6,11 @@ export type Problem = {
   svgParams?: any;
   unitOptions?: string[];
   answerUnit?: string;
+  isWordProblem?: boolean;
+  hint?: string;
 };
+
+import { generateWordProblem } from './wordProblemGenerator';
 
 function getRandomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -15,15 +19,38 @@ function getRandomInt(min: number, max: number) {
 export function generateProblems(stage: number, count: number = 10): Problem[] {
   const problems: Problem[] = [];
 
+  if (stage > 100) {
+    // Mid-Boss or Final Boss
+    let stagesToMix: number[] = [];
+    if (stage === 103) stagesToMix = [1, 2, 3];
+    else if (stage === 106) stagesToMix = [4, 5, 6];
+    else if (stage === 109) stagesToMix = [7, 8, 9];
+    else if (stage === 112) stagesToMix = [10, 11, 12];
+    else if (stage === 115) stagesToMix = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+    for (let i = 0; i < count; i++) {
+      const randomStage = stagesToMix[Math.floor(Math.random() * stagesToMix.length)];
+      problems.push(generateWordProblem(randomStage));
+    }
+    return problems;
+  }
+
   for (let i = 0; i < count; i++) {
+    if (i === count - 1) {
+      problems.push(generateWordProblem(stage));
+      continue;
+    }
+
     let question = '';
     let answer = '';
     let svgType: Problem['svgType'];
     let svgParams: any;
     let unitOptions: string[] | undefined;
     let answerUnit: string | undefined;
+    let hint: string | undefined;
 
     if (stage === 1) {
+      hint = "일의 자리부터 차례대로 계산하세요.";
       // Level 1: 2-digit addition/subtraction
       const isAdd = Math.random() > 0.5;
       if (isAdd) {
@@ -51,6 +78,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         question = `${a} - ${b} = ?`;
         answer = (a - b).toString();
       }
+      hint = "백의 자리, 십의 자리, 일의 자리를 맞추어 계산하세요.";
     } else if (stage === 3) {
       // Level 3: 1-digit multiplication / 1-digit quotient division
       const isMul = Math.random() > 0.5;
@@ -66,6 +94,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         question = `${a} \\div ${b} = ?`;
         answer = ans.toString();
       }
+      hint = "구구단을 떠올려보세요.";
     } else if (stage === 4) {
       // Level 4: 4-digit addition/subtraction
       const isAdd = Math.random() > 0.5;
@@ -80,6 +109,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         question = `${a} - ${b} = ?`;
         answer = (a - b).toString();
       }
+      hint = "각 자리의 숫자를 맞추어 계산하세요.";
     } else if (stage === 5) {
       // Level 5: Polygons (SVG)
       const sides = getRandomInt(3, 5);
@@ -101,12 +131,14 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         answerUnit = 'cm';
         svgParams = { sides, label: `${length}cm` };
       }
+      hint = "도형의 모양을 잘 살펴보세요.";
     } else if (stage === 6) {
       // Level 6: 2-digit * 1-digit
       const a = getRandomInt(10, 99);
       const b = getRandomInt(2, 9);
       question = `${a} \\times ${b} = ?`;
       answer = (a * b).toString();
+      hint = "일의 자리부터 곱하고 올림에 주의하세요.";
     } else if (stage === 7) {
       // Level 7: 3-digit / 1-digit
       const b = getRandomInt(2, 9);
@@ -116,6 +148,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
       const a = b * ans;
       question = `${a} \\div ${b} = ?`;
       answer = ans.toString();
+      hint = "나누는 수의 배수를 생각해보세요.";
     } else if (stage === 8) {
       // Level 8: Analog Clock (SVG)
       const hour = getRandomInt(1, 12);
@@ -135,6 +168,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
       
       question = `현재 시각에서 ${addMinutes}분 뒤는 몇 시 몇 분인가요? (시와 분을 붙여서 쓰세요. 예: 2시 5분 -> 205)`;
       answer = `${newHour}${newMin.toString().padStart(2, '0')}`;
+      hint = "1시간은 60분입니다.";
     } else if (stage === 9) {
       // Level 9: Money calculation
       const price = getRandomInt(1, 9) * 500; // 500 to 4500
@@ -147,6 +181,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         answer = (paid - price).toString();
       }
       answerUnit = '원';
+      hint = "거스름돈 = 낸 돈 - 물건값";
     } else if (stage === 10) {
       // Level 10: 3-digit / 2-digit
       const b = getRandomInt(11, 50);
@@ -156,6 +191,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
       const a = b * ans;
       question = `${a} \\div ${b} = ?`;
       answer = ans.toString();
+      hint = "나누는 수를 어림하여 몫을 예상해보세요.";
     } else if (stage === 11) {
       // Level 11: Fraction addition/subtraction
       const isAdd = Math.random() > 0.5;
@@ -185,6 +221,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
           answer = `${diffNum / divisor}/${den / divisor}`;
         }
       }
+      hint = "분모가 같을 때는 분자끼리 계산합니다.";
     } else if (stage === 12) {
       // Level 12: Decimal addition/subtraction (1 decimal place)
       const isAdd = Math.random() > 0.5;
@@ -199,6 +236,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         question = `${max.toFixed(1)} - ${min.toFixed(1)} = ?`;
         answer = (max - min).toFixed(1).replace(/\.0$/, '');
       }
+      hint = "소수점의 위치를 맞추어 계산하세요.";
     } else if (stage === 13) {
       // Level 13: Mixed calc 1 (2 operators)
       // e.g., A + B * C
@@ -234,6 +272,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
         question = `${a} - ${b} \\div ${c} = ?`;
         answer = (a - ans).toString();
       }
+      hint = "곱셈과 나눗셈을 덧셈, 뺄셈보다 먼저 계산하세요.";
     } else if (stage === 14) {
       // Level 14: Mixed calc 2 (3 operators)
       // e.g., A - B / C + D
@@ -244,6 +283,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
       const d = getRandomInt(5, 20);
       question = `${a} - ${b} \\div ${c} + ${d} = ?`;
       answer = (a - divAns + d).toString();
+      hint = "곱셈과 나눗셈을 먼저 계산한 후, 앞에서부터 차례대로 계산하세요.";
     } else if (stage === 15) {
       // Level 15: Mixed calc with parentheses
       // e.g., (A + B) * C - D
@@ -253,6 +293,7 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
       const d = getRandomInt(10, 50);
       question = `(${a} + ${b}) \\times ${c} - ${d} = ?`;
       answer = ((a + b) * c - d).toString();
+      hint = "괄호 안을 가장 먼저 계산하세요.";
     }
 
     problems.push({
@@ -262,7 +303,8 @@ export function generateProblems(stage: number, count: number = 10): Problem[] {
       svgType,
       svgParams,
       unitOptions,
-      answerUnit
+      answerUnit,
+      hint
     });
   }
 

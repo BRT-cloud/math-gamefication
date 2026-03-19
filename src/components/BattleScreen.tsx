@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, ShieldAlert, XCircle, CheckCircle2, Ghost, Shield, Zap } from 'lucide-react';
+import { Heart, ShieldAlert, XCircle, CheckCircle2, Ghost, Shield, Zap, Search, Magnet, Skull } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Keypad } from './Keypad';
 import { MathDisplay } from './MathDisplay';
@@ -8,18 +8,20 @@ import { DynamicSVG } from './DynamicSVG';
 import { generateProblems, Problem } from '../utils/mathGenerator';
 import { playCorrectSound, playIncorrectSound, playClickSound } from '../utils/sound';
 import { STAGES } from '../utils/stageData';
+import { UserState } from '../utils/storage';
+import { ConfirmModal } from './Dialog';
 
 type BattleScreenProps = {
   stage: number;
   mode?: 'normal' | 'review';
   reviewProblems?: Problem[];
-  shields: number;
-  doubleXpCharges: number;
-  onComplete: (score: number, earnedGold: number, wrongProblems: Problem[], usedShields: number, usedXpCharges: number) => void;
+  state: UserState;
+  setState: React.Dispatch<React.SetStateAction<UserState | null>>;
+  onComplete: (score: number, earnedGold: number, wrongProblems: Problem[]) => void;
   onBack: () => void;
 };
 
-export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, doubleXpCharges, onComplete, onBack }: BattleScreenProps) {
+export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, setState, onComplete, onBack }: BattleScreenProps) {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [input, setInput] = useState('');
@@ -30,10 +32,15 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
   const [shieldActive, setShieldActive] = useState(false);
   
   const [hearts, setHearts] = useState(3);
-  const [usedShields, setUsedShields] = useState(0);
-  const [usedXpCharges, setUsedXpCharges] = useState(0);
   const [wrongProblems, setWrongProblems] = useState<Problem[]>([]);
   const [earnedGold, setEarnedGold] = useState(0);
+
+  // Item states
+  const [hasShield, setHasShield] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [luckyTurns, setLuckyTurns] = useState(0);
+  const [showWarning, setShowWarning] = useState(false);
+  const [confirmItem, setConfirmItem] = useState<{ id: keyof UserState['items'], name: string } | null>(null);
 
   const stageData = STAGES.find(s => s.id === stage) || STAGES[0];
 
@@ -41,15 +48,109 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
     if (mode === 'review' && reviewProblems) {
       setProblems(reviewProblems);
     } else {
-      setProblems(generateProblems(stage, 10));
+      setProblems(generateProblems(stage, stage > 100 ? (stage === 115 ? 10 : 5) : 10));
     }
   }, [stage, mode, reviewProblems]);
 
+  const totalProblems = problems.length;
+  const currentProblem = problems[currentIndex];
+  const remainingHP = totalProblems - currentIndex;
+
+  const isMidBoss = stage > 100 && stage < 115;
+  const isFinalBoss = stage === 115;
+  const isStageBoss = mode === 'normal' && currentIndex === totalProblems - 1 && stage <= 15;
+  const isBossMode = isMidBoss || isFinalBoss || isStageBoss;
+
+  // Boss BGM
+  useEffect(() => {
+    let bgm: HTMLAudioElement | null = null;
+    if (isBossMode) {
+      bgm = new Audio('https://cdn.freesound.org/previews/568/568393_12891969-lq.mp3');
+      bgm.loop = true;
+      bgm.volume = 0.2;
+      // Delay BGM start to let siren play first if it's the start of the encounter
+      const shouldShowWarning = (isMidBoss || isFinalBoss) ? currentIndex === 0 : isStageBoss;
+      if (shouldShowWarning) {
+        setTimeout(() => bgm?.play().catch(() => {}), 2000);
+      } else {
+        bgm.play().catch(() => {});
+      }
+    }
+    return () => {
+      if (bgm) {
+        bgm.pause();
+        bgm.currentTime = 0;
+      }
+    };
+  }, [isBossMode]); // Only re-run if isBossMode changes
+
+  // Boss Warning Siren
+  useEffect(() => {
+    const shouldShowWarning = (isMidBoss || isFinalBoss) ? currentIndex === 0 : isStageBoss;
+
+    if (shouldShowWarning && !feedback) {
+      setShowWarning(true);
+      if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+      
+      const siren = new Audio('https://cdn.freesound.org/previews/333/333404_5121236-lq.mp3');
+      siren.volume = 0.3;
+      siren.play().catch(() => {});
+
+      setTimeout(() => {
+        setShowWarning(false);
+      }, 2000);
+    }
+  }, [isMidBoss, isFinalBoss, isStageBoss, currentIndex]);
+
   if (problems.length === 0) return null;
 
-  const currentProblem = problems[currentIndex];
-  const totalProblems = problems.length;
-  const remainingHP = totalProblems - currentIndex;
+  const handleUseItem = (itemId: keyof UserState['items']) => {
+    if (state.items[itemId] <= 0) return;
+    
+    // Check if item can be used
+    if (itemId === 'heart_potion' && hearts >= 3) return;
+    if (itemId === 'sacred_shield' && hasShield) return;
+    if (itemId === 'magic_magnifier' && showHint) return;
+    if (itemId === 'lucky_horseshoe' && luckyTurns > 0) return;
+
+    const itemNames: Record<keyof UserState['items'], string> = {
+      heart_potion: '하트 포션',
+      sacred_shield: '신성한 방패',
+      magic_magnifier: '마법 돋보기',
+      lucky_horseshoe: '행운의 편자'
+    };
+
+    setConfirmItem({ id: itemId, name: itemNames[itemId] });
+  };
+
+  const confirmUseItem = () => {
+    if (!confirmItem) return;
+    const itemId = confirmItem.id;
+
+    playClickSound();
+    setState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: {
+          ...prev.items,
+          [itemId]: prev.items[itemId] - 1
+        }
+      };
+    });
+
+    if (itemId === 'heart_potion') {
+      setHearts(h => Math.min(3, h + 1));
+    } else if (itemId === 'sacred_shield') {
+      setHasShield(true);
+    } else if (itemId === 'magic_magnifier') {
+      setShowHint(true);
+    } else if (itemId === 'lucky_horseshoe') {
+      setLuckyTurns(3);
+    }
+    
+    setConfirmItem(null);
+  };
 
   const handleInput = (val: string) => {
     if (feedback || shieldActive) return;
@@ -101,20 +202,26 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
       isCorrect = false;
     }
 
+    let currentGoldReward = 0;
+    
+    if (luckyTurns > 0) {
+      setLuckyTurns(c => c - 1);
+    }
+
     if (isCorrect) {
       playCorrectSound();
       setFeedback('correct');
       setScore((s) => s + 1);
       
       let baseGold = stage <= 4 ? 10 : 20;
-      let goldReward = mode === 'review' ? baseGold * 2 : baseGold;
+      if (isBossMode) baseGold *= 2;
+      currentGoldReward = mode === 'review' ? baseGold * 2 : baseGold;
       
-      if (doubleXpCharges - usedXpCharges > 0) {
-        goldReward *= 2;
-        setUsedXpCharges(c => c + 1);
+      if (luckyTurns > 0) {
+        currentGoldReward *= 2;
       }
       
-      setEarnedGold(g => g + goldReward);
+      setEarnedGold(g => g + currentGoldReward);
 
       confetti({
         particleCount: 100,
@@ -139,9 +246,9 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
         return prev;
       });
 
-      if (shields - usedShields > 0) {
+      if (hasShield) {
         setShieldActive(true);
-        setUsedShields(s => s + 1);
+        setHasShield(false);
       } else {
         setHearts(h => Math.max(0, h - 1));
       }
@@ -152,25 +259,48 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
       setShieldActive(false);
       setInput('');
       setSelectedUnit(null);
+      setShowHint(false);
       
-      const isDead = (shields - usedShields <= 0 && hearts <= (isCorrect ? 1 : 0) && !isCorrect);
+      const isDead = (!isCorrect && !hasShield && hearts - 1 <= 0);
       
       if (currentIndex < totalProblems - 1 && !isDead) {
         setCurrentIndex((i) => i + 1);
       } else {
-        onComplete(score + (isCorrect ? 1 : 0), earnedGold + (isCorrect ? (mode === 'review' ? (stage <= 4 ? 20 : 40) : (stage <= 4 ? 10 : 20)) * (doubleXpCharges - usedXpCharges > 0 ? 2 : 1) : 0), wrongProblems, usedShields, usedXpCharges + (isCorrect && doubleXpCharges - usedXpCharges > 0 ? 1 : 0));
+        onComplete(score + (isCorrect ? 1 : 0), earnedGold + currentGoldReward, wrongProblems);
       }
     }, shieldActive ? 2500 : 1500);
   };
 
   return (
-    <div className="min-h-screen text-white flex flex-col relative overflow-hidden">
+    <div className={`min-h-screen text-white flex flex-col relative overflow-hidden ${isBossMode ? (isFinalBoss ? 'bg-purple-950' : 'bg-red-950') : ''}`}>
       {/* Dynamic Background */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center"
+        className={`absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-1000 ${isBossMode ? 'opacity-30 mix-blend-multiply' : 'opacity-100'}`}
         style={{ backgroundImage: `url(${stageData.bg})` }}
       />
-      <div className="absolute inset-0 z-0 bg-slate-900/60 backdrop-blur-[2px]" />
+      <div className={`absolute inset-0 z-0 backdrop-blur-[2px] ${isBossMode ? (isFinalBoss ? 'bg-purple-900/80' : 'bg-red-900/80') : 'bg-slate-900/60'}`} />
+
+      {/* Boss Vignette */}
+      {isBossMode && (
+        <div className={`pointer-events-none fixed inset-0 z-0 ${isFinalBoss ? 'shadow-[inset_0_0_150px_rgba(147,51,234,0.6)]' : 'shadow-[inset_0_0_150px_rgba(220,38,38,0.6)]'}`} />
+      )}
+
+      {/* Warning Shake Overlay */}
+      <AnimatePresence>
+        {showWarning && (
+          <motion.div
+            initial={{ opacity: 0, scale: 1.2 }}
+            animate={{ opacity: 1, scale: 1, x: [-10, 10, -10, 10, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm ${isFinalBoss ? 'bg-purple-900/80' : 'bg-red-900/80'}`}
+          >
+            <h1 className={`text-6xl md:text-8xl font-black tracking-widest ${isFinalBoss ? 'text-purple-500 drop-shadow-[0_0_30px_rgba(168,85,247,1)]' : 'text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,1)]'}`}>
+              WARNING
+            </h1>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stage 1-4: 연산의 숲 (Floating Numbers) */}
       {stage <= 4 && (
@@ -400,28 +530,27 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
       <header className="p-4 flex items-center justify-between border-b border-white/10 bg-slate-900/40 backdrop-blur-md sticky top-0 z-10">
         <button
           onClick={() => { playClickSound(); onBack(); }}
-          className="text-slate-300 hover:text-white font-bold transition-colors drop-shadow-md"
+          className="text-white hover:text-slate-200 font-bold transition-colors [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)]"
         >
           ← 지도
         </button>
         <div className="flex items-center space-x-2">
-          <ShieldAlert className="w-6 h-6 text-rose-400 drop-shadow-md" />
-          <span className="font-black text-xl drop-shadow-md">{mode === 'review' ? '오답 노트 복습' : stageData.title}</span>
+          {isBossMode ? <Skull className="w-6 h-6 text-red-400 drop-shadow-md" /> : <ShieldAlert className="w-6 h-6 text-rose-400 drop-shadow-md" />}
+          <span className="font-black text-xl text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)]">{mode === 'review' ? '오답 노트 복습' : stageData.title}</span>
         </div>
         <div className="flex items-center space-x-1">
           {Array.from({ length: 3 }).map((_, i) => (
             <Heart key={i} className={`w-6 h-6 drop-shadow-md ${i < hearts ? 'text-rose-500 fill-rose-500' : 'text-slate-700/50'}`} />
           ))}
-          {shields - usedShields > 0 && (
+          {hasShield && (
             <div className="ml-2 flex items-center text-cyan-300 drop-shadow-md">
               <Shield className="w-5 h-5 mr-1" />
-              <span className="font-bold text-sm">x{shields - usedShields}</span>
             </div>
           )}
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-2xl mx-auto w-full relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-2xl mx-auto w-full relative z-10 pb-32">
         {/* Monster Area */}
         <div className="w-full mb-8 flex flex-col items-center">
           <motion.div
@@ -434,25 +563,30 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
               feedback ? { duration: 0.5 } :
               { repeat: Infinity, duration: 2, ease: "easeInOut" }
             }
-            className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 shadow-2xl backdrop-blur-md border border-white/20 ${
+            className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center mb-4 shadow-2xl backdrop-blur-md border border-white/20 ${
               feedback === 'correct' ? 'bg-rose-500/80 shadow-rose-500/50' :
+              isBossMode ? 'bg-red-900/80 shadow-red-900/50' :
               'bg-slate-800/80 shadow-slate-900/50'
             }`}
           >
-            <Ghost className={`w-12 h-12 ${feedback === 'correct' ? 'text-white' : 'text-rose-400 drop-shadow-md'}`} />
+            {isBossMode ? (
+              <Skull className={`w-20 h-20 md:w-24 md:h-24 ${feedback === 'correct' ? 'text-white' : 'text-red-400 drop-shadow-md'}`} />
+            ) : (
+              <Ghost className={`w-16 h-16 md:w-20 md:h-20 ${feedback === 'correct' ? 'text-white' : 'text-rose-400 drop-shadow-md'}`} />
+            )}
           </motion.div>
           
           <div className="w-full max-w-md">
-            <div className="flex justify-between text-sm font-bold text-slate-300 mb-2 drop-shadow-md">
-              <span>몬스터 체력 (남은 문제)</span>
+            <div className="flex justify-between text-sm font-bold text-white mb-2 [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)]">
+              <span>{isBossMode ? '보스 체력' : '몬스터 체력'} (남은 문제)</span>
               <span>{remainingHP} / {totalProblems}</span>
             </div>
-            <div className="h-4 bg-slate-900/50 backdrop-blur-sm rounded-full overflow-hidden flex border border-white/10">
+            <div className={`h-6 rounded-full overflow-hidden flex border border-white/20 ${isBossMode ? 'bg-red-950/80' : 'bg-slate-900/50 backdrop-blur-sm'}`}>
               {Array.from({ length: totalProblems }).map((_, i) => (
                 <div
                   key={i}
-                  className={`flex-1 border-r border-slate-900/50 last:border-0 transition-colors duration-500 ${
-                    i < remainingHP ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-transparent'
+                  className={`flex-1 border-r border-black/20 last:border-0 transition-colors duration-500 ${
+                    i < remainingHP ? (isBossMode ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]') : 'bg-transparent'
                   }`}
                 />
               ))}
@@ -460,26 +594,32 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
           </div>
         </div>
 
-        {/* Problem Area (Glassmorphism) */}
+        {/* Problem Area */}
         <motion.div
           animate={isShaking ? { x: [-10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
-          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)] relative overflow-hidden"
+          className="w-full max-w-[90%] bg-black/50 border border-white/20 rounded-3xl p-6 md:p-8 mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative overflow-y-auto max-h-[40vh] break-keep"
         >
           <div className="text-center mb-6">
-            <span className="inline-block bg-white/20 text-white font-bold px-4 py-1 rounded-full text-sm mb-4 shadow-inner">
-              문제 {currentIndex + 1} / {totalProblems}
+            <span className="inline-block bg-white/20 text-white font-bold px-4 py-1 rounded-full text-sm mb-4 shadow-inner [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)]">
+              문제 {currentIndex + 1} / {totalProblems} {currentProblem.isWordProblem && '(문장제)'}
             </span>
             
             {currentProblem.svgType && (
-              <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
+              <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10 flex justify-center">
                 <DynamicSVG type={currentProblem.svgType} params={currentProblem.svgParams} />
               </div>
             )}
 
-            <div className="drop-shadow-md">
-              <MathDisplay text={currentProblem.question} />
+            <div className={`text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)] leading-relaxed ${currentProblem.isWordProblem ? 'text-lg md:text-xl' : 'text-4xl md:text-5xl'}`}>
+              <MathDisplay text={currentProblem.question} className={currentProblem.isWordProblem ? 'text-left justify-start' : 'text-center justify-center'} />
             </div>
+            
+            {showHint && currentProblem.hint && (
+              <div className="mt-4 p-3 bg-emerald-900/50 border border-emerald-500/50 rounded-xl text-emerald-200 text-sm [text-shadow:1px_1px_2px_rgba(0,0,0,0.8)]">
+                💡 힌트: <MathDisplay text={currentProblem.hint} className="text-sm inline-flex" />
+              </div>
+            )}
           </div>
 
           {/* Input Display */}
@@ -536,9 +676,50 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
           </div>
         </motion.div>
 
+        {/* Item Quick Slots */}
+        <div className="w-full max-w-[90%] flex justify-center gap-3 mb-4">
+          <button 
+            onClick={() => handleUseItem('heart_potion')} 
+            disabled={state.items.heart_potion <= 0 || hearts >= 3}
+            className={`flex flex-col items-center justify-center w-14 h-14 bg-slate-800/80 border border-slate-600 rounded-xl transition-all ${state.items.heart_potion <= 0 || hearts >= 3 ? 'opacity-50 grayscale' : 'hover:bg-slate-700'} relative`}
+          >
+            <Heart className="w-6 h-6 text-rose-500" />
+            <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border border-slate-800">{state.items.heart_potion}</span>
+          </button>
+          <button 
+            onClick={() => handleUseItem('sacred_shield')} 
+            disabled={state.items.sacred_shield <= 0 || hasShield}
+            className={`flex flex-col items-center justify-center w-14 h-14 bg-slate-800/80 border ${hasShield ? 'border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.8)]' : 'border-slate-600'} rounded-xl transition-all ${state.items.sacred_shield <= 0 && !hasShield ? 'opacity-50 grayscale' : 'hover:bg-slate-700'} relative`}
+          >
+            <Shield className={`w-6 h-6 ${hasShield ? 'text-sky-300 animate-pulse' : 'text-sky-400'}`} />
+            <span className="absolute -top-2 -right-2 bg-sky-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border border-slate-800">{state.items.sacred_shield}</span>
+          </button>
+          <button 
+            onClick={() => handleUseItem('magic_magnifier')} 
+            disabled={state.items.magic_magnifier <= 0 || showHint || !currentProblem.hint}
+            className={`flex flex-col items-center justify-center w-14 h-14 bg-slate-800/80 border ${showHint ? 'border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'border-slate-600'} rounded-xl transition-all ${state.items.magic_magnifier <= 0 && !showHint ? 'opacity-50 grayscale' : (!currentProblem.hint ? 'opacity-50' : 'hover:bg-slate-700')} relative`}
+          >
+            <Search className={`w-6 h-6 ${showHint ? 'text-emerald-300 animate-pulse' : 'text-emerald-500'}`} />
+            <span className="absolute -top-2 -right-2 bg-emerald-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border border-slate-800">{state.items.magic_magnifier}</span>
+          </button>
+          <button 
+            onClick={() => handleUseItem('lucky_horseshoe')} 
+            disabled={state.items.lucky_horseshoe <= 0 || luckyTurns > 0}
+            className={`flex flex-col items-center justify-center w-14 h-14 bg-slate-800/80 border ${luckyTurns > 0 ? 'border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]' : 'border-slate-600'} rounded-xl transition-all ${state.items.lucky_horseshoe <= 0 && luckyTurns === 0 ? 'opacity-50 grayscale' : 'hover:bg-slate-700'} relative`}
+          >
+            <Magnet className={`w-6 h-6 ${luckyTurns > 0 ? 'text-amber-300 animate-pulse' : 'text-amber-500'}`} />
+            <span className="absolute -top-2 -right-2 bg-amber-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border border-slate-800">{state.items.lucky_horseshoe}</span>
+            {luckyTurns > 0 && (
+              <span className="absolute -bottom-2 bg-amber-500 text-slate-900 text-[10px] font-bold px-1 rounded-sm">
+                {luckyTurns}회
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Keypad */}
-        <div className="w-full mt-auto pb-8">
-          <div className="bg-slate-900/40 backdrop-blur-md p-4 rounded-3xl border border-white/10 shadow-xl">
+        <div className="w-full mt-auto">
+          <div className="bg-black/60 backdrop-blur-md p-4 rounded-3xl border border-white/20 shadow-2xl">
             <Keypad
               onInput={handleInput}
               onDelete={handleDelete}
@@ -548,6 +729,14 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, shields, 
           </div>
         </div>
       </main>
+
+      {confirmItem && (
+        <ConfirmModal
+          message={`'${confirmItem.name}' 아이템을 사용하시겠습니까?`}
+          onConfirm={confirmUseItem}
+          onClose={() => setConfirmItem(null)}
+        />
+      )}
     </div>
   );
 }

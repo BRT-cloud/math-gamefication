@@ -8,6 +8,7 @@ import { ReviewScreen } from './components/ReviewScreen';
 import { SettingsModal } from './components/SettingsModal';
 import { AlertModal } from './components/Dialog';
 import { UserState, loadState, saveState, defaultState } from './utils/storage';
+import { STAGES } from './utils/stageData';
 import { Problem } from './utils/mathGenerator';
 import { playFanfare } from './utils/sound';
 import { fetchUserData, syncUserData } from './utils/api';
@@ -94,37 +95,17 @@ export default function App() {
     setCurrentScreen('battle');
   };
 
-  const handleUseItem = (itemId: keyof UserState['items']) => {
-    setState(prev => {
-      if (!prev || prev.items[itemId] <= 0) return prev;
-      
-      const newItems = { ...prev.items, [itemId]: prev.items[itemId] - 1 };
-      
-      if (itemId === 'golden_key') {
-        const nextStage = Math.max(...prev.unlocked_stages) + 1;
-        if (nextStage <= 15 && !prev.unlocked_stages.includes(nextStage)) {
-          setTimeout(() => setAlertMessage(`황금 열쇠를 사용하여 Stage ${nextStage}이(가) 열렸습니다!`), 100);
-          return { ...prev, items: newItems, unlocked_stages: [...prev.unlocked_stages, nextStage] };
-        } else {
-          setTimeout(() => setAlertMessage('더 이상 열 수 있는 스테이지가 없습니다.'), 100);
-          return prev; // Don't consume key
-        }
-      } else if (itemId === 'xp_potion') {
-        setTimeout(() => setAlertMessage('경험치 물약을 사용했습니다!\n다음 10문제 동안 골드를 2배로 획득합니다.'), 100);
-        return { ...prev, items: newItems, doubleXpCharges: prev.doubleXpCharges + 10 };
-      }
-      
-      return { ...prev, items: newItems };
-    });
-    setSyncTrigger(s => s + 1);
-  };
-
-  const handleBattleComplete = (score: number, earnedGold: number, wrongProblems: Problem[], usedShields: number, usedXpCharges: number) => {
+  const handleBattleComplete = (score: number, earnedGold: number, wrongProblems: Problem[]) => {
     setLastScore(score);
     
     // Update state
+    const currentStageIndex = STAGES.findIndex(s => s.id === selectedStage);
+    const nextStageId = currentStageIndex !== -1 && currentStageIndex < STAGES.length - 1 
+      ? STAGES[currentStageIndex + 1].id 
+      : null;
+
     const isPassed = score >= 8;
-    const isNewStageUnlocked = isPassed && !state.unlocked_stages.includes(selectedStage + 1) && selectedStage < 15;
+    const isNewStageUnlocked = isPassed && nextStageId !== null && !state.unlocked_stages.includes(nextStageId);
     
     if (isNewStageUnlocked) {
       playFanfare();
@@ -155,16 +136,11 @@ export default function App() {
         ...prev,
         total_score: prev.total_score + score,
         gold: prev.gold + earnedGold,
-        items: {
-          ...prev.items,
-          shield: Math.max(0, prev.items.shield - usedShields),
-        },
-        doubleXpCharges: Math.max(0, prev.doubleXpCharges - usedXpCharges),
         wrong_problems: newWrongProblems,
-        unlocked_stages: isNewStageUnlocked 
-          ? [...prev.unlocked_stages, selectedStage + 1] 
+        unlocked_stages: isNewStageUnlocked && nextStageId !== null
+          ? [...prev.unlocked_stages, nextStageId] 
           : prev.unlocked_stages,
-        current_stage: isNewStageUnlocked ? selectedStage + 1 : prev.current_stage
+        current_stage: isNewStageUnlocked && nextStageId !== null ? nextStageId : prev.current_stage
       };
     });
     
@@ -196,7 +172,6 @@ export default function App() {
           onOpenShop={() => setIsShopOpen(true)}
           onOpenReview={() => setCurrentScreen('review')}
           onOpenSettings={() => setIsSettingsOpen(true)}
-          onUseItem={handleUseItem}
         />
       )}
 
@@ -213,27 +188,37 @@ export default function App() {
           stage={selectedStage} 
           mode={battleMode}
           reviewProblems={battleMode === 'review' ? state.wrong_problems : undefined}
-          shields={state.items.shield}
-          doubleXpCharges={state.doubleXpCharges}
+          state={state}
+          setState={setState}
           onComplete={handleBattleComplete}
           onBack={() => setCurrentScreen('map')}
         />
       )}
       
-      {currentScreen === 'result' && (
-        <ResultScreen 
-          score={lastScore}
-          total={battleMode === 'review' ? state.wrong_problems.length : 10}
-          stage={selectedStage}
-          isUnlockedNext={lastScore >= 8 && selectedStage < 15 && battleMode === 'normal'}
-          onNext={() => {
-            setSelectedStage(s => s + 1);
-            setCurrentScreen('battle');
-          }}
-          onRetry={() => setCurrentScreen('battle')}
-          onMap={() => setCurrentScreen('map')}
-        />
-      )}
+      {currentScreen === 'result' && (() => {
+        const currentStageIndex = STAGES.findIndex(s => s.id === selectedStage);
+        const nextStageId = currentStageIndex !== -1 && currentStageIndex < STAGES.length - 1 
+          ? STAGES[currentStageIndex + 1].id 
+          : null;
+        const isUnlockedNext = lastScore >= 8 && nextStageId !== null && battleMode === 'normal';
+
+        return (
+          <ResultScreen 
+            score={lastScore}
+            total={battleMode === 'review' ? state.wrong_problems.length : 10}
+            stage={selectedStage}
+            isUnlockedNext={isUnlockedNext}
+            onNext={() => {
+              if (nextStageId !== null) {
+                setSelectedStage(nextStageId);
+                setCurrentScreen('battle');
+              }
+            }}
+            onRetry={() => setCurrentScreen('battle')}
+            onMap={() => setCurrentScreen('map')}
+          />
+        );
+      })()}
 
       {isShopOpen && (
         <ShopModal 

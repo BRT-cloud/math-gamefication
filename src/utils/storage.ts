@@ -9,9 +9,11 @@ export type UserState = {
   avatarColor: string;
   wrong_problems: Problem[];
   items: {
-    shield: number;
-    golden_key: number;
-    xp_potion: number;
+    heart_potion: number;
+    sacred_shield: number;
+    magic_magnifier: number;
+    lucky_horseshoe: number;
+    golden_crown: number;
   };
   doubleXpCharges: number;
 };
@@ -27,9 +29,11 @@ export const defaultState: UserState = {
   avatarColor: 'bg-emerald-500',
   wrong_problems: [],
   items: {
-    shield: 0,
-    golden_key: 0,
-    xp_potion: 0,
+    heart_potion: 0,
+    sacred_shield: 0,
+    magic_magnifier: 0,
+    lucky_horseshoe: 0,
+    golden_crown: 0,
   },
   doubleXpCharges: 0,
 };
@@ -46,9 +50,11 @@ export function loadState(): UserState {
         avatarColor: parsed.avatarColor || 'bg-emerald-500',
         wrong_problems: parsed.wrong_problems || [],
         items: parsed.items || {
-          shield: parsed.shields || 0, // Migrate old shields
-          golden_key: 0,
-          xp_potion: 0,
+          heart_potion: 0,
+          sacred_shield: parsed.shields || 0, // Migrate old shields
+          magic_magnifier: 0,
+          lucky_horseshoe: 0,
+          golden_crown: 0,
         },
         doubleXpCharges: parsed.doubleXpCharges || 0,
       };

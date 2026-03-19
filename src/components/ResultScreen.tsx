@@ -103,7 +103,7 @@ export function ResultScreen({ score, total, stage, isUnlockedNext, onNext, onRe
           )}
 
           <div className="space-y-3">
-            {passed && isUnlockedNext && stage < 15 ? (
+            {passed && isUnlockedNext ? (
               <button
                 onClick={() => { playClickSound(); onNext(); }}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 rounded-xl transition-colors flex items-center justify-center space-x-2"

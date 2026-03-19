@@ -33,19 +33,19 @@ export function Keypad({ onInput, onDelete, onSubmit, onClear }: KeypadProps) {
           onClick={onClear}
           className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-xl font-bold py-4 rounded-xl transition-colors"
         >
-          C
+          초기화
         </button>
         <button
           onClick={onDelete}
           className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-xl font-bold py-4 rounded-xl transition-colors"
         >
-          DEL
+          지우기
         </button>
         <button
           onClick={onSubmit}
           className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-xl font-bold py-4 rounded-xl transition-colors"
         >
-          ENTER
+          입력
         </button>
       </div>
     </div>

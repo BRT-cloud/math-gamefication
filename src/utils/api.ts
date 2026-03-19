@@ -1,7 +1,7 @@
 import { UserState } from './storage';
 
 const API_URL = import.meta.env.VITE_GOOGLE_SHEETS_API_URL || '';
-const TIMEOUT_MS = 3000; // 3 seconds timeout
+const TIMEOUT_MS = 15000; // 15 seconds timeout
 
 export const fetchUserData = async (nickname: string): Promise<UserState | null> => {
   if (!API_URL) {
@@ -63,7 +63,7 @@ export const syncUserData = async (state: UserState, totalAttempted: number = 0)
       body: JSON.stringify({
         action: 'saveUser',
         nickname: state.nickname,
-        level: Math.max(...state.unlocked_stages),
+        level: state.unlocked_stages.length,
         gold: state.gold,
         solvedCount: state.total_score,
         accuracy: accuracy,

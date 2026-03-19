@@ -65,8 +65,8 @@ export function ReviewScreen({ state, onClose, onSolveAll }: ReviewScreenProps) 
                     </div>
                   )}
                   
-                  <div className="bg-slate-900 p-4 rounded-xl mb-4">
-                    <MathDisplay text={problem.question} />
+                  <div className="bg-slate-900 p-4 rounded-xl mb-4 text-xl md:text-2xl">
+                    <MathDisplay text={problem.question} className={problem.isWordProblem ? 'text-left justify-start text-base md:text-lg' : 'text-center justify-center'} />
                   </div>
                   
                   <div className="flex justify-between items-center text-sm">

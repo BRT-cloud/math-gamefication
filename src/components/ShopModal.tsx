@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Shield, Key, Droplet, Coins, FlaskConical } from 'lucide-react';
+import { X, Shield, Key, Droplet, Coins, FlaskConical, Heart, Search, Crown, Magnet } from 'lucide-react';
 import { UserState } from '../utils/storage';
 import { playCoinSound, playIncorrectSound, playClickSound } from '../utils/sound';
 import { AlertModal } from './Dialog';
@@ -15,9 +15,11 @@ type ShopModalProps = {
 const ITEMS = [
   { id: 'potion_red', type: 'avatar', name: '빨간 마법 물약', desc: '아바타를 빨간색으로 변경', price: 50, icon: Droplet, color: 'text-red-500', action: (s: UserState) => ({ ...s, avatarColor: 'bg-red-500' }) },
   { id: 'potion_blue', type: 'avatar', name: '파란 마법 물약', desc: '아바타를 파란색으로 변경', price: 50, icon: Droplet, color: 'text-blue-500', action: (s: UserState) => ({ ...s, avatarColor: 'bg-blue-500' }) },
-  { id: 'shield', type: 'item', name: '수호의 방패', desc: '틀려도 하트를 1회 보호', price: 30, icon: Shield, color: 'text-slate-400', action: (s: UserState) => ({ ...s, items: { ...s.items, shield: s.items.shield + 1 } }) },
-  { id: 'golden_key', type: 'item', name: '황금 열쇠', desc: '다음 스테이지 즉시 오픈', price: 200, icon: Key, color: 'text-amber-400', action: (s: UserState) => ({ ...s, items: { ...s.items, golden_key: s.items.golden_key + 1 } }) },
-  { id: 'xp_potion', type: 'item', name: '경험치 물약', desc: '10문제 동안 획득 골드 2배', price: 100, icon: FlaskConical, color: 'text-purple-400', action: (s: UserState) => ({ ...s, items: { ...s.items, xp_potion: s.items.xp_potion + 1 } }) },
+  { id: 'heart_potion', type: 'item', name: '하트 물약', desc: '체력 1 회복', price: 30, icon: Heart, color: 'text-rose-500', action: (s: UserState) => ({ ...s, items: { ...s.items, heart_potion: s.items.heart_potion + 1 } }) },
+  { id: 'sacred_shield', type: 'item', name: '신성한 방패', desc: '오답 시 하트 감소 방어 (1회용)', price: 40, icon: Shield, color: 'text-sky-400', action: (s: UserState) => ({ ...s, items: { ...s.items, sacred_shield: s.items.sacred_shield + 1 } }) },
+  { id: 'magic_magnifier', type: 'item', name: '마법 돋보기', desc: '문제의 힌트/공식을 알려줌', price: 20, icon: Search, color: 'text-emerald-400', action: (s: UserState) => ({ ...s, items: { ...s.items, magic_magnifier: s.items.magic_magnifier + 1 } }) },
+  { id: 'lucky_horseshoe', type: 'item', name: '행운의 편자', desc: '다음 3문제 골드 2배', price: 50, icon: Magnet, color: 'text-amber-500', action: (s: UserState) => ({ ...s, items: { ...s.items, lucky_horseshoe: s.items.lucky_horseshoe + 1 } }) },
+  { id: 'golden_crown', type: 'item', name: '황금 왕관', desc: '닉네임 옆에 표시되는 명예 아이템', price: 500, icon: Crown, color: 'text-yellow-400', action: (s: UserState) => ({ ...s, items: { ...s.items, golden_crown: s.items.golden_crown + 1 } }) },
 ];
 
 export function ShopModal({ state, setState, onClose, onSync }: ShopModalProps) {

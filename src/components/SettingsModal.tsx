@@ -5,6 +5,8 @@ import { UserState } from '../utils/storage';
 import { playClickSound } from '../utils/sound';
 import { AlertModal, ConfirmModal } from './Dialog';
 
+import { STAGES } from '../utils/stageData';
+
 type SettingsModalProps = {
   state: UserState;
   setState: React.Dispatch<React.SetStateAction<UserState | null>>;
@@ -56,7 +58,7 @@ export function SettingsModal({ state, setState, onClose, onSync }: SettingsModa
     setConfirmAction({
       message: '모든 스테이지를 잠금 해제하시겠습니까? (테스트 모드)',
       onConfirm: () => {
-        setState(prev => prev ? { ...prev, unlocked_stages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] } : prev);
+        setState(prev => prev ? { ...prev, unlocked_stages: STAGES.map(s => s.id) } : prev);
         if (onSync) onSync();
         setTimeout(() => setAlertMessage('모든 스테이지가 열렸습니다!'), 100);
       }
