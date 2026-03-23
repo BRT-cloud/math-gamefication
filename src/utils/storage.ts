@@ -49,12 +49,12 @@ export function loadState(): UserState {
         gold: parsed.gold || 0,
         avatarColor: parsed.avatarColor || 'bg-emerald-500',
         wrong_problems: parsed.wrong_problems || [],
-        items: parsed.items || {
-          heart_potion: 0,
-          sacred_shield: parsed.shields || 0, // Migrate old shields
-          magic_magnifier: 0,
-          lucky_horseshoe: 0,
-          golden_crown: 0,
+        items: {
+          heart_potion: Number(parsed.items?.heart_potion) || 0,
+          sacred_shield: Number(parsed.items?.sacred_shield) || Number(parsed.shields) || 0,
+          magic_magnifier: Number(parsed.items?.magic_magnifier) || 0,
+          lucky_horseshoe: Number(parsed.items?.lucky_horseshoe) || Number(parsed.items?.magnet) || 0,
+          golden_crown: Number(parsed.items?.golden_crown) || 0,
         },
         doubleXpCharges: parsed.doubleXpCharges || 0,
       };

@@ -29,6 +29,8 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [isShaking, setIsShaking] = useState(false);
+  const [isBossShaking, setIsBossShaking] = useState(false);
+  const [bossFlash, setBossFlash] = useState(false);
   const [shieldActive, setShieldActive] = useState(false);
   
   const [hearts, setHearts] = useState(3);
@@ -48,7 +50,9 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
     if (mode === 'review' && reviewProblems) {
       setProblems(reviewProblems);
     } else {
-      setProblems(generateProblems(stage, stage > 100 ? (stage === 115 ? 10 : 5) : 10));
+      // Mid-boss (101-114): 15 problems, Final boss (115): 20 problems
+      const count = stage > 100 ? (stage === 115 ? 20 : 15) : 10;
+      setProblems(generateProblems(stage, count));
     }
   }, [stage, mode, reviewProblems]);
 
@@ -117,7 +121,8 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
       heart_potion: '하트 포션',
       sacred_shield: '신성한 방패',
       magic_magnifier: '마법 돋보기',
-      lucky_horseshoe: '행운의 편자'
+      lucky_horseshoe: '행운의 편자',
+      golden_crown: '황금 왕관'
     };
 
     setConfirmItem({ id: itemId, name: itemNames[itemId] });
@@ -180,10 +185,16 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
       try {
         if (str.includes('/')) {
           const [num, den] = str.split('/');
-          if (den === '0') return NaN;
-          return parseFloat(num) / parseFloat(den);
+          const cleanNum = num.replace(/[^0-9.]/g, '');
+          const cleanDen = den.replace(/[^0-9.]/g, '');
+          if (!cleanNum || !cleanDen || cleanDen === '0') return NaN;
+          return parseFloat(cleanNum) / parseFloat(cleanDen);
         }
-        return parseFloat(str);
+        
+        // Extract only numbers and dots for flexible checking
+        const cleanStr = str.replace(/[^0-9.]/g, '');
+        if (!cleanStr) return NaN;
+        return parseFloat(cleanStr);
       } catch {
         return NaN;
       }
@@ -194,11 +205,12 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
 
     if (!isNaN(expectedVal) && !isNaN(inputVal) && Math.abs(expectedVal - inputVal) < 0.0001) {
       isCorrect = true;
-    } else if (input === currentProblem.answer) {
+    } else if (input.replace(/[^0-9.]/g, '') === currentProblem.answer.replace(/[^0-9.]/g, '')) {
       isCorrect = true;
     }
 
-    if (isCorrect && currentProblem.answerUnit && selectedUnit !== currentProblem.answerUnit) {
+    if (isCorrect && currentProblem.answerUnit && selectedUnit && selectedUnit !== currentProblem.answerUnit) {
+      // If user provided a unit, it must match. But if they didn't provide a unit, we allow it if the number is correct.
       isCorrect = false;
     }
 
@@ -213,6 +225,15 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
       setFeedback('correct');
       setScore((s) => s + 1);
       
+      if (isBossMode) {
+        setIsBossShaking(true);
+        setBossFlash(true);
+        setTimeout(() => {
+          setIsBossShaking(false);
+          setBossFlash(false);
+        }, 500);
+      }
+      
       let baseGold = stage <= 4 ? 10 : 20;
       if (isBossMode) baseGold *= 2;
       currentGoldReward = mode === 'review' ? baseGold * 2 : baseGold;
@@ -223,12 +244,33 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
       
       setEarnedGold(g => g + currentGoldReward);
 
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#10B981', '#34D399', '#059669'],
-      });
+      if (isFinalBoss && currentIndex === totalProblems - 1) {
+        // Extra grand confetti for final boss victory
+        const duration = 5 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+        const interval = setInterval(() => {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+        }, 250);
+      } else {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#34D399', '#059669'],
+        });
+      }
     } else {
       playIncorrectSound();
       setFeedback('incorrect');
@@ -272,7 +314,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
   };
 
   return (
-    <div className={`min-h-screen text-white flex flex-col relative overflow-hidden ${isBossMode ? (isFinalBoss ? 'bg-purple-950' : 'bg-red-950') : ''}`}>
+    <div className={`min-h-screen text-white flex flex-col relative overflow-hidden ${isBossMode ? (isFinalBoss ? 'bg-purple-950' : 'bg-red-950') : ''} ${isBossShaking ? 'animate-shake' : ''}`}>
       {/* Dynamic Background */}
       <div 
         className={`absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-1000 ${isBossMode ? 'opacity-30 mix-blend-multiply' : 'opacity-100'}`}
@@ -550,7 +592,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-2xl mx-auto w-full relative z-10 pb-32">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-2xl mx-auto w-full relative z-10 pb-40">
         {/* Monster Area */}
         <div className="w-full mb-8 flex flex-col items-center">
           <motion.div
@@ -563,7 +605,8 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
               feedback ? { duration: 0.5 } :
               { repeat: Infinity, duration: 2, ease: "easeInOut" }
             }
-            className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center mb-4 shadow-2xl backdrop-blur-md border border-white/20 ${
+            className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center mb-4 shadow-2xl backdrop-blur-md border border-white/20 transition-colors duration-200 ${
+              bossFlash ? 'bg-white brightness-200' :
               feedback === 'correct' ? 'bg-rose-500/80 shadow-rose-500/50' :
               isBossMode ? 'bg-red-900/80 shadow-red-900/50' :
               'bg-slate-800/80 shadow-slate-900/50'
@@ -598,7 +641,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
         <motion.div
           animate={isShaking ? { x: [-10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
-          className="w-full max-w-[90%] bg-black/50 border border-white/20 rounded-3xl p-6 md:p-8 mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative overflow-y-auto max-h-[40vh] break-keep"
+          className="w-full max-w-[90%] bg-black/50 border border-white/20 rounded-3xl p-8 md:p-10 mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative overflow-y-auto max-h-[50vh] break-keep"
         >
           <div className="text-center mb-6">
             <span className="inline-block bg-white/20 text-white font-bold px-4 py-1 rounded-full text-sm mb-4 shadow-inner [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)]">
@@ -611,7 +654,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
               </div>
             )}
 
-            <div className={`text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)] leading-relaxed ${currentProblem.isWordProblem ? 'text-lg md:text-xl' : 'text-4xl md:text-5xl'}`}>
+            <div className={`[text-shadow:2px_2px_4px_rgba(0,0,0,0.8)] ${currentProblem.isWordProblem ? 'text-[1.2rem] leading-[1.6] text-cyan-400 px-2 py-4' : 'text-white text-4xl md:text-5xl leading-relaxed'}`}>
               <MathDisplay text={currentProblem.question} className={currentProblem.isWordProblem ? 'text-left justify-start' : 'text-center justify-center'} />
             </div>
             

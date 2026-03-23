@@ -13,8 +13,6 @@ type ShopModalProps = {
 };
 
 const ITEMS = [
-  { id: 'potion_red', type: 'avatar', name: '빨간 마법 물약', desc: '아바타를 빨간색으로 변경', price: 50, icon: Droplet, color: 'text-red-500', action: (s: UserState) => ({ ...s, avatarColor: 'bg-red-500' }) },
-  { id: 'potion_blue', type: 'avatar', name: '파란 마법 물약', desc: '아바타를 파란색으로 변경', price: 50, icon: Droplet, color: 'text-blue-500', action: (s: UserState) => ({ ...s, avatarColor: 'bg-blue-500' }) },
   { id: 'heart_potion', type: 'item', name: '하트 물약', desc: '체력 1 회복', price: 30, icon: Heart, color: 'text-rose-500', action: (s: UserState) => ({ ...s, items: { ...s.items, heart_potion: s.items.heart_potion + 1 } }) },
   { id: 'sacred_shield', type: 'item', name: '신성한 방패', desc: '오답 시 하트 감소 방어 (1회용)', price: 40, icon: Shield, color: 'text-sky-400', action: (s: UserState) => ({ ...s, items: { ...s.items, sacred_shield: s.items.sacred_shield + 1 } }) },
   { id: 'magic_magnifier', type: 'item', name: '마법 돋보기', desc: '문제의 힌트/공식을 알려줌', price: 20, icon: Search, color: 'text-emerald-400', action: (s: UserState) => ({ ...s, items: { ...s.items, magic_magnifier: s.items.magic_magnifier + 1 } }) },
@@ -68,7 +66,7 @@ export function ShopModal({ state, setState, onClose, onSync }: ShopModalProps) 
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {ITEMS.map(item => (
               <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex items-center justify-between">
                 <div className="flex items-center gap-4">

@@ -17,15 +17,46 @@ type SettingsModalProps = {
 export function SettingsModal({ state, setState, onClose, onSync }: SettingsModalProps) {
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ message: string, onConfirm: () => void } | null>(null);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const checkPassword = () => {
+    if (passwordInput === '1010') {
+      setIsAdminMode(true);
+      setShowPasswordPrompt(false);
+      setPasswordInput('');
+      if (pendingAction) {
+        pendingAction();
+        setPendingAction(null);
+      }
+    } else {
+      playClickSound();
+      setAlertMessage('비밀번호가 틀렸습니다.');
+      setPasswordInput('');
+    }
+  };
+
+  const handleAdminAction = (action: () => void) => {
+    if (isAdminMode) {
+      action();
+    } else {
+      setPendingAction(() => action);
+      setShowPasswordPrompt(true);
+    }
+  };
 
   const handleResetAll = () => {
     playClickSound();
-    setConfirmAction({
-      message: '모든 데이터가 삭제됩니다. 정말 초기화하시겠습니까?',
-      onConfirm: () => {
-        localStorage.clear();
-        window.location.reload();
-      }
+    handleAdminAction(() => {
+      setConfirmAction({
+        message: '모든 데이터가 삭제됩니다. 정말 초기화하시겠습니까?',
+        onConfirm: () => {
+          localStorage.clear();
+          window.location.reload();
+        }
+      });
     });
   };
 
@@ -55,13 +86,15 @@ export function SettingsModal({ state, setState, onClose, onSync }: SettingsModa
 
   const handleUnlockAll = () => {
     playClickSound();
-    setConfirmAction({
-      message: '모든 스테이지를 잠금 해제하시겠습니까? (테스트 모드)',
-      onConfirm: () => {
-        setState(prev => prev ? { ...prev, unlocked_stages: STAGES.map(s => s.id) } : prev);
-        if (onSync) onSync();
-        setTimeout(() => setAlertMessage('모든 스테이지가 열렸습니다!'), 100);
-      }
+    handleAdminAction(() => {
+      setConfirmAction({
+        message: '모든 스테이지를 잠금 해제하시겠습니까? (테스트 모드)',
+        onConfirm: () => {
+          setState(prev => prev ? { ...prev, unlocked_stages: STAGES.map(s => s.id) } : prev);
+          if (onSync) onSync();
+          setTimeout(() => setAlertMessage('모든 스테이지가 열렸습니다!'), 100);
+        }
+      });
     });
   };
 
@@ -137,6 +170,41 @@ export function SettingsModal({ state, setState, onClose, onSync }: SettingsModa
           onConfirm={confirmAction.onConfirm} 
           onClose={() => setConfirmAction(null)} 
         />
+      )}
+
+      {showPasswordPrompt && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-slate-800 border border-slate-700 rounded-3xl p-8 w-full max-w-xs shadow-2xl text-center"
+          >
+            <h3 className="text-xl font-black text-white mb-4">관리자 비밀번호</h3>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && checkPassword()}
+              placeholder="비밀번호 입력"
+              autoFocus
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-center text-2xl text-white mb-6 focus:border-emerald-500 outline-none transition-colors"
+            />
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowPasswordPrompt(false); setPasswordInput(''); setPendingAction(null); }}
+                className="flex-1 py-3 rounded-xl font-bold bg-slate-700 text-white"
+              >
+                취소
+              </button>
+              <button 
+                onClick={checkPassword}
+                className="flex-1 py-3 rounded-xl font-bold bg-emerald-500 text-slate-900"
+              >
+                확인
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

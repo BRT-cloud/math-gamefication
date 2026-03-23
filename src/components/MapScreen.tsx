@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
-import { Lock, Unlock, Star, Map as MapIcon, ChevronRight, Coins, Shield, BookOpen, Store, Settings, Heart, Search, Magnet, Crown, CloudFog } from 'lucide-react';
+import { Lock, Unlock, Star, Map as MapIcon, ChevronRight, Coins, Shield, BookOpen, Store, Settings, Heart, Search, Magnet, Crown, CloudFog, X, Key, FlaskConical } from 'lucide-react';
 import { UserState } from '../utils/storage';
 import { STAGES } from '../utils/stageData';
 import { playClickSound, playItemSound } from '../utils/sound';
@@ -228,7 +228,9 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
                         )}
                       </div>
 
-                      <h2 className="text-2xl font-black mb-1 drop-shadow-lg text-white">Stage {stage.id}</h2>
+                      {!stage.isBoss && (
+                        <h2 className="text-2xl font-black mb-1 drop-shadow-lg text-white">Stage {stage.id}</h2>
+                      )}
                       <h3 className="text-lg font-bold text-emerald-300 mb-2 drop-shadow-md">{stage.title}</h3>
                       <p className="text-slate-300 font-medium text-sm drop-shadow-md">{stage.desc}</p>
 

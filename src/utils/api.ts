@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { UserState } from './storage';
 
 const API_URL = import.meta.env.VITE_GOOGLE_SHEETS_API_URL || '';
@@ -33,6 +34,13 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
           ...fullState,
           nickname: result.data.Nickname,
           gold: Number(result.data.Gold) || 0,
+          items: {
+            heart_potion: Number(fullState.items?.heart_potion) || 0,
+            sacred_shield: Number(fullState.items?.sacred_shield) || 0,
+            magic_magnifier: Number(fullState.items?.magic_magnifier) || 0,
+            lucky_horseshoe: Number(fullState.items?.lucky_horseshoe) || Number(fullState.items?.magnet) || Number(result.data.magnet) || 0,
+            golden_crown: Number(fullState.items?.golden_crown) || 0,
+          }
         };
       } catch (e) {
         console.error('Failed to parse Wrong_Note', e);
