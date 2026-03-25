@@ -181,31 +181,10 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
 
     let isCorrect = false;
     
-    const evaluate = (str: string) => {
-      try {
-        if (str.includes('/')) {
-          const [num, den] = str.split('/');
-          const cleanNum = num.replace(/[^0-9.]/g, '');
-          const cleanDen = den.replace(/[^0-9.]/g, '');
-          if (!cleanNum || !cleanDen || cleanDen === '0') return NaN;
-          return parseFloat(cleanNum) / parseFloat(cleanDen);
-        }
-        
-        // Extract only numbers and dots for flexible checking
-        const cleanStr = str.replace(/[^0-9.]/g, '');
-        if (!cleanStr) return NaN;
-        return parseFloat(cleanStr);
-      } catch {
-        return NaN;
-      }
-    };
-
-    const expectedVal = evaluate(currentProblem.answer);
-    const inputVal = evaluate(input);
-
-    if (!isNaN(expectedVal) && !isNaN(inputVal) && Math.abs(expectedVal - inputVal) < 0.0001) {
-      isCorrect = true;
-    } else if (input.replace(/[^0-9.]/g, '') === currentProblem.answer.replace(/[^0-9.]/g, '')) {
+    const cleanExpected = currentProblem.answer.replace(/[^0-9.]/g, '');
+    const cleanInput = input.replace(/[^0-9.]/g, '');
+    
+    if (cleanExpected === cleanInput && cleanExpected !== '') {
       isCorrect = true;
     }
 
@@ -320,11 +299,11 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
         className={`absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-1000 ${isBossMode ? 'opacity-30 mix-blend-multiply' : 'opacity-100'}`}
         style={{ backgroundImage: `url(${stageData.bg})` }}
       />
-      <div className={`absolute inset-0 z-0 backdrop-blur-[2px] ${isBossMode ? (isFinalBoss ? 'bg-purple-900/80' : 'bg-red-900/80') : 'bg-slate-900/60'}`} />
+      <div className={`absolute inset-0 z-0 backdrop-blur-[2px] ${isFinalBoss ? 'bg-purple-900/80' : isMidBoss ? `${stageData.color.replace('bg-', 'bg-').replace('600', '900')}/80` : isStageBoss ? 'bg-red-900/80' : 'bg-slate-900/60'}`} />
 
       {/* Boss Vignette */}
       {isBossMode && (
-        <div className={`pointer-events-none fixed inset-0 z-0 ${isFinalBoss ? 'shadow-[inset_0_0_150px_rgba(147,51,234,0.6)]' : 'shadow-[inset_0_0_150px_rgba(220,38,38,0.6)]'}`} />
+        <div className={`pointer-events-none fixed inset-0 z-0 ${isFinalBoss ? 'shadow-[inset_0_0_150px_rgba(147,51,234,0.6)]' : isMidBoss ? 'shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]' : 'shadow-[inset_0_0_150px_rgba(220,38,38,0.6)]'}`} />
       )}
 
       {/* Warning Shake Overlay */}
@@ -605,17 +584,23 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
               feedback ? { duration: 0.5 } :
               { repeat: Infinity, duration: 2, ease: "easeInOut" }
             }
-            className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center mb-4 shadow-2xl backdrop-blur-md border border-white/20 transition-colors duration-200 ${
+            className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center mb-4 shadow-2xl backdrop-blur-md border border-white/20 transition-colors duration-200 text-6xl md:text-7xl ${
               bossFlash ? 'bg-white brightness-200' :
               feedback === 'correct' ? 'bg-rose-500/80 shadow-rose-500/50' :
-              isBossMode ? 'bg-red-900/80 shadow-red-900/50' :
+              isFinalBoss ? 'bg-purple-900/80 shadow-purple-900/50' :
+              isMidBoss ? 'bg-orange-900/80 shadow-orange-900/50' :
+              isStageBoss ? 'bg-red-900/80 shadow-red-900/50' :
               'bg-slate-800/80 shadow-slate-900/50'
             }`}
           >
-            {isBossMode ? (
-              <Skull className={`w-20 h-20 md:w-24 md:h-24 ${feedback === 'correct' ? 'text-white' : 'text-red-400 drop-shadow-md'}`} />
+            {isFinalBoss ? (
+              <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]'}>🤖</span>
+            ) : isMidBoss ? (
+              <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(249,115,22,0.8)]'}>🐉</span>
+            ) : isStageBoss ? (
+              <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]'}>🧌</span>
             ) : (
-              <Ghost className={`w-16 h-16 md:w-20 md:h-20 ${feedback === 'correct' ? 'text-white' : 'text-rose-400 drop-shadow-md'}`} />
+              <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-md'}>👻</span>
             )}
           </motion.div>
           

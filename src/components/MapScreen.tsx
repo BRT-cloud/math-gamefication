@@ -12,18 +12,19 @@ type MapScreenProps = {
   onOpenShop: () => void;
   onOpenReview: () => void;
   onOpenSettings: () => void;
+  onOpenAvatar: () => void;
 };
 
-export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOpenSettings }: MapScreenProps) {
+export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOpenSettings, onOpenAvatar }: MapScreenProps) {
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
   const y2 = useTransform(scrollY, [0, 1000], [0, -100]);
 
-  const [selectedItem, setSelectedItem] = useState<{ id: keyof UserState['items'], name: string, desc: string } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{ id: string, name: string, desc: string } | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
-  const handleItemClick = (itemId: keyof UserState['items'], name: string, desc: string) => {
+  const handleItemClick = (itemId: string, name: string, desc: string) => {
     playClickSound();
     setSelectedItem({ id: itemId, name, desc });
   };
@@ -94,7 +95,10 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
       <div className="max-w-4xl mx-auto p-4 md:p-8 relative z-10">
         <header className="flex flex-col md:flex-row items-center justify-between mb-16 bg-slate-800/80 backdrop-blur-md p-6 rounded-3xl border border-slate-700 shadow-2xl gap-4">
           <div className="flex items-center space-x-4">
-            <div className={`w-14 h-14 ${state.avatarColor} rounded-full flex items-center justify-center shadow-lg border-2 border-white/20`}>
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-2 border-white/20"
+              style={{ backgroundColor: state.avatarColors.head }}
+            >
               <MapIcon className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -111,6 +115,13 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
               <Coins className="w-5 h-5 text-amber-400" />
               <span className="font-bold text-amber-400">{state.gold} G</span>
             </div>
+            <button 
+              onClick={() => { playClickSound(); onOpenAvatar(); }}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+            >
+              <Shield className="w-5 h-5" />
+              아바타 룸
+            </button>
             <button 
               onClick={() => { playClickSound(); onOpenShop(); }}
               className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20"
@@ -176,7 +187,10 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
                       transition={{ repeat: Infinity, duration: 2 }}
                       className={`absolute top-0 -translate-y-full z-30 ${isLeft ? 'right-4' : 'left-4'}`}
                     >
-                      <div className={`w-10 h-10 ${state.avatarColor} rounded-full border-2 border-white shadow-xl flex items-center justify-center`}>
+                      <div 
+                        className="w-10 h-10 rounded-full border-2 border-white shadow-xl flex items-center justify-center"
+                        style={{ backgroundColor: state.avatarColors.head }}
+                      >
                         <MapIcon className="w-5 h-5 text-white" />
                       </div>
                       <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white mx-auto -mt-[2px]" />

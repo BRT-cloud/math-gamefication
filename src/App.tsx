@@ -7,6 +7,7 @@ import { ShopModal } from './components/ShopModal';
 import { ReviewScreen } from './components/ReviewScreen';
 import { SettingsModal } from './components/SettingsModal';
 import { AlertModal } from './components/Dialog';
+import { AvatarRoom } from './components/AvatarRoom';
 import { UserState, loadState, saveState, defaultState } from './utils/storage';
 import { STAGES } from './utils/stageData';
 import { Problem } from './utils/mathGenerator';
@@ -14,7 +15,7 @@ import { playFanfare } from './utils/sound';
 import { fetchUserData, syncUserData } from './utils/api';
 import { Loader2 } from 'lucide-react';
 
-type Screen = 'welcome' | 'map' | 'battle' | 'result' | 'review';
+type Screen = 'welcome' | 'map' | 'battle' | 'result' | 'review' | 'avatar';
 
 export default function App() {
   const [state, setState] = useState<UserState | null>(null);
@@ -26,13 +27,16 @@ export default function App() {
   const [battleMode, setBattleMode] = useState<'normal' | 'review'>('normal');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncTrigger, setSyncTrigger] = useState(0);
+  const [syncMessage, setSyncMessage] = useState<string>("데이터를 동기화 중입니다...");
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [showCrownPopup, setShowCrownPopup] = useState(false);
 
   useEffect(() => {
     const loadedState = loadState();
     if (loadedState.nickname) {
       // Background sync on load if nickname exists
       setIsSyncing(true);
+      setSyncMessage("데이터를 동기화 중입니다...");
       fetchUserData(loadedState.nickname).then(userData => {
         if (userData) {
           setState(userData);
@@ -42,6 +46,7 @@ export default function App() {
         setCurrentScreen('map');
         setIsSyncing(false);
       }).catch(() => {
+        setSyncMessage("서버 연결 실패, 로컬 데이터로 시작합니다.");
         setState(loadedState);
         setCurrentScreen('map');
         setIsSyncing(false);
@@ -65,6 +70,7 @@ export default function App() {
 
   const handleStart = async (nickname: string) => {
     setIsSyncing(true);
+    setSyncMessage("데이터를 동기화 중입니다...");
     try {
       const userData = await fetchUserData(nickname);
       if (userData) {
@@ -75,11 +81,17 @@ export default function App() {
         syncUserData(newState).catch(console.error); // Do not await
       }
       setCurrentScreen('map');
+      setIsSyncing(false);
     } catch (error) {
       console.error(error);
-      setState({ ...defaultState, nickname });
+      setSyncMessage("서버 연결 실패, 로컬 데이터로 시작합니다.");
+      const loadedState = loadState();
+      if (loadedState.nickname === nickname) {
+        setState(loadedState);
+      } else {
+        setState({ ...defaultState, nickname });
+      }
       setCurrentScreen('map');
-    } finally {
       setIsSyncing(false);
     }
   };
@@ -104,10 +116,18 @@ export default function App() {
       ? STAGES[currentStageIndex + 1].id 
       : null;
 
-    const isPassed = score >= 8;
+    const totalProblems = selectedStage > 100 ? (selectedStage === 115 ? 20 : 15) : 10;
+    const isPassed = score >= Math.floor(totalProblems * 0.8);
     const isNewStageUnlocked = isPassed && nextStageId !== null && !state.unlocked_stages.includes(nextStageId);
     
     if (isNewStageUnlocked) {
+      playFanfare();
+    }
+
+    // Golden Crown Logic
+    const isPerfectFinalBoss = selectedStage === 115 && score === 20;
+    if (isPerfectFinalBoss && state.items.golden_crown === 0) {
+      setShowCrownPopup(true);
       playFanfare();
     }
 
@@ -137,6 +157,10 @@ export default function App() {
         total_score: prev.total_score + score,
         gold: prev.gold + earnedGold,
         wrong_problems: newWrongProblems,
+        items: {
+          ...prev.items,
+          golden_crown: isPerfectFinalBoss ? 1 : prev.items.golden_crown
+        },
         unlocked_stages: isNewStageUnlocked && nextStageId !== null
           ? [...prev.unlocked_stages, nextStageId] 
           : prev.unlocked_stages,
@@ -153,12 +177,30 @@ export default function App() {
       {isSyncing && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
-          <p className="text-white font-bold text-lg">데이터를 동기화 중입니다...</p>
+          <p className="text-white font-bold text-lg">{syncMessage}</p>
         </div>
       )}
 
       {alertMessage && (
         <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      )}
+
+      {showCrownPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-gradient-to-b from-amber-500 to-amber-700 p-1 rounded-2xl max-w-sm w-full animate-bounce-slight">
+            <div className="bg-slate-900 rounded-xl p-8 text-center flex flex-col items-center">
+              <div className="text-6xl mb-4 drop-shadow-[0_0_15px_rgba(251,191,36,1)]">👑</div>
+              <h2 className="text-2xl font-black text-amber-400 mb-2 drop-shadow-md">전설의 황금 왕관을 획득했습니다!</h2>
+              <p className="text-slate-300 mb-6">수학의 주권자를 물리친 증표입니다. 아바타에 자동으로 장착되었습니다.</p>
+              <button
+                onClick={() => setShowCrownPopup(false)}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {currentScreen === 'welcome' && (
@@ -172,6 +214,18 @@ export default function App() {
           onOpenShop={() => setIsShopOpen(true)}
           onOpenReview={() => setCurrentScreen('review')}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenAvatar={() => setCurrentScreen('avatar')}
+        />
+      )}
+
+      {currentScreen === 'avatar' && (
+        <AvatarRoom 
+          state={state} 
+          setState={setState} 
+          onBack={() => {
+            setCurrentScreen('map');
+          }} 
+          onSync={() => setSyncTrigger(s => s + 1)}
         />
       )}
 
@@ -200,12 +254,14 @@ export default function App() {
         const nextStageId = currentStageIndex !== -1 && currentStageIndex < STAGES.length - 1 
           ? STAGES[currentStageIndex + 1].id 
           : null;
-        const isUnlockedNext = lastScore >= 8 && nextStageId !== null && battleMode === 'normal';
+        
+        const totalProblems = selectedStage > 100 ? (selectedStage === 115 ? 20 : 15) : 10;
+        const isUnlockedNext = lastScore >= Math.floor(totalProblems * 0.8) && nextStageId !== null && battleMode === 'normal';
 
         return (
           <ResultScreen 
             score={lastScore}
-            total={battleMode === 'review' ? state.wrong_problems.length : 10}
+            total={battleMode === 'review' ? state.wrong_problems.length : totalProblems}
             stage={selectedStage}
             isUnlockedNext={isUnlockedNext}
             onNext={() => {

@@ -1,5 +1,7 @@
 import { Problem } from './mathGenerator';
 
+export type AvatarParts = 'head' | 'body' | 'arms' | 'legs';
+
 export type UserState = {
   nickname: string;
   current_stage: number;
@@ -7,6 +9,8 @@ export type UserState = {
   unlocked_stages: number[];
   gold: number;
   avatarColor: string;
+  avatarColors: Record<AvatarParts, string>;
+  ownedColors: string[];
   wrong_problems: Problem[];
   items: {
     heart_potion: number;
@@ -16,6 +20,13 @@ export type UserState = {
     golden_crown: number;
   };
   doubleXpCharges: number;
+  equippedItems: {
+    head: string | null;
+    torso: string | null;
+    legs: string | null;
+    rightHand: string | null;
+  };
+  ownedItems: string[];
 };
 
 const STORAGE_KEY = 'math_expedition_state';
@@ -27,6 +38,13 @@ export const defaultState: UserState = {
   unlocked_stages: [1],
   gold: 0,
   avatarColor: 'bg-emerald-500',
+  avatarColors: {
+    head: '#cccccc',
+    body: '#cccccc',
+    arms: '#cccccc',
+    legs: '#cccccc',
+  },
+  ownedColors: ['#cccccc'],
   wrong_problems: [],
   items: {
     heart_potion: 0,
@@ -36,6 +54,13 @@ export const defaultState: UserState = {
     golden_crown: 0,
   },
   doubleXpCharges: 0,
+  equippedItems: {
+    head: null,
+    torso: null,
+    legs: null,
+    rightHand: null,
+  },
+  ownedItems: [],
 };
 
 export function loadState(): UserState {
@@ -48,6 +73,8 @@ export function loadState(): UserState {
         ...parsed,
         gold: parsed.gold || 0,
         avatarColor: parsed.avatarColor || 'bg-emerald-500',
+        avatarColors: parsed.avatarColors || defaultState.avatarColors,
+        ownedColors: parsed.ownedColors || defaultState.ownedColors,
         wrong_problems: parsed.wrong_problems || [],
         items: {
           heart_potion: Number(parsed.items?.heart_potion) || 0,
@@ -57,6 +84,8 @@ export function loadState(): UserState {
           golden_crown: Number(parsed.items?.golden_crown) || 0,
         },
         doubleXpCharges: parsed.doubleXpCharges || 0,
+        equippedItems: parsed.equippedItems || defaultState.equippedItems,
+        ownedItems: parsed.ownedItems || defaultState.ownedItems,
       };
     }
   } catch (e) {

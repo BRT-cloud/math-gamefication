@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Sword } from 'lucide-react';
 import { playClickSound } from '../utils/sound';
+import { Avatar } from './Avatar';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment } from '@react-three/drei';
+import { defaultState } from '../utils/storage';
 
 type WelcomeScreenProps = {
   onStart: (nickname: string) => void;
@@ -24,11 +27,21 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', bounce: 0.5 }}
-        className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border border-slate-700"
+        className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border border-slate-700 overflow-hidden"
       >
-        <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
-          <Sword className="w-10 h-10 text-white" />
+        <div className="mb-6 bg-slate-900/50 rounded-2xl border border-slate-700/50 overflow-hidden shadow-inner h-64 relative">
+          <Canvas camera={{ position: [0, 1.5, 4], fov: 45 }}>
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[5, 5, 5]} intensity={1} />
+            <Environment preset="city" />
+            <Avatar state={defaultState} />
+            <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={2} />
+          </Canvas>
+          <div className="absolute bottom-2 right-2 text-[10px] text-slate-500 pointer-events-none opacity-50">
+            드래그하여 회전
+          </div>
         </div>
+        
         <h1 className="text-4xl font-black text-white mb-2 tracking-tight">수학 원정대</h1>
         <p className="text-emerald-400 font-bold text-xl mb-8">연산의 탑</p>
         
