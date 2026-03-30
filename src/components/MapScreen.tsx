@@ -92,7 +92,7 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
         )}
       </AnimatePresence>
 
-      <div className="max-w-4xl mx-auto p-4 md:p-8 relative z-10">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 relative z-10">
         <header className="flex flex-col md:flex-row items-center justify-between mb-16 bg-slate-800/80 backdrop-blur-md p-6 rounded-3xl border border-slate-700 shadow-2xl gap-4">
           <div className="flex items-center space-x-4">
             <div 
@@ -156,7 +156,7 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
         </header>
 
         {/* Winding Path Map */}
-        <div className="relative max-w-2xl mx-auto py-10">
+        <div className="relative max-w-4xl mx-auto py-10">
           {/* Path Line */}
           <div className="absolute top-0 bottom-0 left-1/2 w-2 bg-slate-700/50 -translate-x-1/2 rounded-full z-0" />
 
@@ -266,7 +266,7 @@ export function MapScreen({ state, onSelectStage, onOpenShop, onOpenReview, onOp
 
       {/* Inventory Sidebar / Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-700/50 p-4 z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
-        <div className="max-w-4xl mx-auto flex items-center justify-between overflow-x-auto hide-scrollbar">
+        <div className="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-3 min-w-max">
             <span className="text-slate-400 font-bold mr-2 drop-shadow-md">인벤토리</span>
             

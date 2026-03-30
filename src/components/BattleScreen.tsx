@@ -557,7 +557,9 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
         </button>
         <div className="flex items-center space-x-2">
           {isBossMode ? <Skull className="w-6 h-6 text-red-400 drop-shadow-md" /> : <ShieldAlert className="w-6 h-6 text-rose-400 drop-shadow-md" />}
-          <span className="font-black text-xl text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)]">{mode === 'review' ? '오답 노트 복습' : stageData.title}</span>
+          <h2 className={`font-black text-xl text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8)] ${isBossMode ? 'boss-title' : ''}`}>
+            {mode === 'review' ? '오답 노트 복습' : stageData.title}
+          </h2>
         </div>
         <div className="flex items-center space-x-1">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -571,7 +573,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-2xl mx-auto w-full relative z-10 pb-40">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-5xl mx-auto w-full relative z-10 pb-40">
         {/* Monster Area */}
         <div className="w-full mb-8 flex flex-col items-center">
           <motion.div
@@ -639,7 +641,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
               </div>
             )}
 
-            <div className={`[text-shadow:2px_2px_4px_rgba(0,0,0,0.8)] ${currentProblem.isWordProblem ? 'text-[1.2rem] leading-[1.6] text-cyan-400 px-2 py-4' : 'text-white text-4xl md:text-5xl leading-relaxed'}`}>
+            <div className={`[text-shadow:2px_2px_4px_rgba(0,0,0,0.8)] ${currentProblem.isWordProblem ? 'text-[1.6rem] leading-[1.8] text-cyan-400 px-2 py-4' : 'text-white text-5xl md:text-6xl leading-loose'}`}>
               <MathDisplay text={currentProblem.question} className={currentProblem.isWordProblem ? 'text-left justify-start' : 'text-center justify-center'} />
             </div>
             
@@ -653,7 +655,7 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
           {/* Input Display */}
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-center space-x-4">
-              <div className={`text-5xl font-mono font-black border-b-4 pb-2 min-w-[120px] text-center transition-colors drop-shadow-md ${
+              <div className={`text-6xl font-mono font-black border-b-4 pb-2 min-w-[120px] text-center transition-colors drop-shadow-md ${
                 feedback === 'correct' ? 'text-emerald-400 border-emerald-400' :
                 feedback === 'incorrect' ? 'text-rose-400 border-rose-400' :
                 'text-white border-white/50'

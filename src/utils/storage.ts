@@ -39,12 +39,12 @@ export const defaultState: UserState = {
   gold: 0,
   avatarColor: 'bg-emerald-500',
   avatarColors: {
-    head: '#cccccc',
-    body: '#cccccc',
-    arms: '#cccccc',
-    legs: '#cccccc',
+    head: '#ffdbac',
+    body: '#ffdbac',
+    arms: '#ffdbac',
+    legs: '#ffdbac',
   },
-  ownedColors: ['#cccccc'],
+  ownedColors: ['#ffdbac'],
   wrong_problems: [],
   items: {
     heart_potion: 0,

@@ -52,7 +52,7 @@ export function ResultScreen({ score, total, stage, isUnlockedNext, onNext, onRe
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border border-slate-700 relative overflow-hidden"
+        className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-xl w-full text-center border border-slate-700 relative overflow-hidden"
       >
         {passed && (
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { MapScreen } from './components/MapScreen';
 import { BattleScreen } from './components/BattleScreen';
@@ -27,7 +27,7 @@ export default function App() {
   const [battleMode, setBattleMode] = useState<'normal' | 'review'>('normal');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncTrigger, setSyncTrigger] = useState(0);
-  const [syncMessage, setSyncMessage] = useState<string>("데이터를 동기화 중입니다...");
+  const [syncMessage, setSyncMessage] = useState<string>("동기화 중...");
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [showCrownPopup, setShowCrownPopup] = useState(false);
 
@@ -36,7 +36,7 @@ export default function App() {
     if (loadedState.nickname) {
       // Background sync on load if nickname exists
       setIsSyncing(true);
-      setSyncMessage("데이터를 동기화 중입니다...");
+      setSyncMessage("동기화 중...");
       fetchUserData(loadedState.nickname).then(userData => {
         if (userData) {
           setState(userData);
@@ -56,10 +56,13 @@ export default function App() {
     }
   }, []);
 
+  const prevSyncTrigger = useRef(0);
+
   useEffect(() => {
     if (state) {
       saveState(state); // Keep local backup
-      if (syncTrigger > 0) {
+      if (syncTrigger > prevSyncTrigger.current) {
+        prevSyncTrigger.current = syncTrigger;
         // Sync to Google Sheets in background
         syncUserData(state, state.total_score * 1.2).catch(console.error);
       }
@@ -70,7 +73,7 @@ export default function App() {
 
   const handleStart = async (nickname: string) => {
     setIsSyncing(true);
-    setSyncMessage("데이터를 동기화 중입니다...");
+    setSyncMessage("동기화 중...");
     try {
       const userData = await fetchUserData(nickname);
       if (userData) {

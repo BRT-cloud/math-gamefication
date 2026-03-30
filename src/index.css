@@ -1,4 +1,24 @@
 @import "tailwindcss";
+@import url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquareRound@1.0/nanumsquareround.css');
+
+@theme {
+  --font-sans: "NanumSquareRound", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: 'NanumSquareRound', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, .boss-title {
+    font-family: 'NanumSquareRound', sans-serif !important;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-shadow: 2px 2px 0px #000, 4px 4px 8px rgba(0,0,0,0.5);
+  }
+}
 
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {

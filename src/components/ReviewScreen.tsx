@@ -14,7 +14,7 @@ type ReviewScreenProps = {
 export function ReviewScreen({ state, onClose, onSolveAll }: ReviewScreenProps) {
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 flex flex-col">
-      <header className="flex items-center justify-between mb-8 bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl max-w-4xl mx-auto w-full">
+      <header className="flex items-center justify-between mb-8 bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl max-w-7xl mx-auto w-full">
         <div className="flex items-center space-x-4">
           <div className="w-14 h-14 bg-rose-500 rounded-full flex items-center justify-center shadow-lg shadow-rose-500/30">
             <BookOpen className="w-7 h-7 text-white" />
@@ -29,7 +29,7 @@ export function ReviewScreen({ state, onClose, onSolveAll }: ReviewScreenProps) 
         </button>
       </header>
 
-      <main className="flex-1 max-w-4xl mx-auto w-full">
+      <main className="flex-1 max-w-7xl mx-auto w-full">
         {state.wrong_problems.length === 0 ? (
           <div className="bg-slate-800 rounded-3xl p-12 text-center border border-slate-700">
             <CheckCircle2 className="w-20 h-20 text-emerald-500 mx-auto mb-4" />
@@ -65,8 +65,8 @@ export function ReviewScreen({ state, onClose, onSolveAll }: ReviewScreenProps) 
                     </div>
                   )}
                   
-                  <div className="bg-slate-900 p-4 rounded-xl mb-4 text-xl md:text-2xl">
-                    <MathDisplay text={problem.question} className={problem.isWordProblem ? 'text-left justify-start text-base md:text-lg' : 'text-center justify-center'} />
+                  <div className="bg-slate-900 p-4 rounded-xl mb-4 text-2xl md:text-3xl leading-relaxed">
+                    <MathDisplay text={problem.question} className={problem.isWordProblem ? 'text-left justify-start text-lg md:text-xl leading-relaxed' : 'text-center justify-center'} />
                   </div>
                   
                   <div className="flex justify-between items-center text-sm">

@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { playClickSound } from '../utils/sound';
-import { Avatar } from './Avatar';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
-import { defaultState } from '../utils/storage';
 
 type WelcomeScreenProps = {
   onStart: (nickname: string) => void;
@@ -22,28 +18,67 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Image Layer */}
+      <div 
+        className="absolute inset-0 z-0 opacity-50 pointer-events-none"
+        style={{
+          backgroundImage: 'url("https://images.unsplash.com/photo-1537210249814-b9a10a161ae4?auto=format&fit=crop&q=80&w=1920&h=1080")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.6) contrast(1.2) saturate(1.2)'
+        }}
+      />
+      
+      {/* Galaxy / Milky Way Overlay Effect */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-[1]">
+        {/* Nebula Gradients */}
+        <div className="absolute top-[-20%] left-[-10%] w-[140%] h-[140%] opacity-40" style={{
+          background: `
+            radial-gradient(circle at 20% 30%, #312e81 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, #4c1d95 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, #1e1b4b 0%, transparent 70%),
+            radial-gradient(circle at 70% 20%, #0f172a 0%, transparent 40%)
+          `,
+          filter: 'blur(80px)',
+          transform: 'rotate(-15deg)'
+        }} />
+        
+        {/* Stars Layer */}
+        <div className="absolute inset-0 opacity-50" style={{
+          backgroundImage: `
+            radial-gradient(1px 1px at 10% 10%, white, transparent),
+            radial-gradient(1px 1px at 20% 30%, white, transparent),
+            radial-gradient(1px 1px at 30% 50%, white, transparent),
+            radial-gradient(1px 1px at 40% 80%, white, transparent),
+            radial-gradient(1px 1px at 50% 20%, white, transparent),
+            radial-gradient(1px 1px at 60% 70%, white, transparent),
+            radial-gradient(1px 1px at 70% 40%, white, transparent),
+            radial-gradient(1px 1px at 80% 90%, white, transparent),
+            radial-gradient(1px 1px at 90% 10%, white, transparent),
+            radial-gradient(2px 2px at 15% 15%, #94a3b8, transparent),
+            radial-gradient(2px 2px at 85% 85%, #94a3b8, transparent),
+            radial-gradient(1.5px 1.5px at 45% 45%, #f8fafc, transparent),
+            radial-gradient(1.5px 1.5px at 75% 25%, #f8fafc, transparent)
+          `,
+          backgroundSize: '400px 400px'
+        }} />
+
+        {/* Milky Way Core Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[40%] opacity-20 rotate-[-35deg]" style={{
+          background: 'radial-gradient(ellipse at center, #6366f1 0%, transparent 70%)',
+          filter: 'blur(100px)'
+        }} />
+      </div>
+
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', bounce: 0.5 }}
-        className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border border-slate-700 overflow-hidden"
+        className="bg-slate-800/60 backdrop-blur-lg p-10 rounded-3xl shadow-2xl max-w-2xl w-full text-center border border-slate-700/50 overflow-hidden relative z-20"
       >
-        <div className="mb-6 bg-slate-900/50 rounded-2xl border border-slate-700/50 overflow-hidden shadow-inner h-64 relative">
-          <Canvas camera={{ position: [0, 1.5, 4], fov: 45 }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[5, 5, 5]} intensity={1} />
-            <Environment preset="city" />
-            <Avatar state={defaultState} />
-            <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={2} />
-          </Canvas>
-          <div className="absolute bottom-2 right-2 text-[10px] text-slate-500 pointer-events-none opacity-50">
-            드래그하여 회전
-          </div>
-        </div>
-        
-        <h1 className="text-4xl font-black text-white mb-2 tracking-tight">수학 원정대</h1>
-        <p className="text-emerald-400 font-bold text-xl mb-8">연산의 탑</p>
+        <h1 className="text-5xl font-black text-white mb-2 tracking-tight">수학 원정대</h1>
+        <h2 className="text-emerald-400 font-bold text-2xl mb-12">연산의 탑</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

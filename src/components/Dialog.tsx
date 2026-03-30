@@ -8,7 +8,7 @@ export function AlertModal({ message, onClose }: { message: string, onClose: () 
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }} 
         animate={{ scale: 1, opacity: 1 }} 
-        className="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center"
+        className="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center"
       >
         <p className="text-white text-lg mb-6 font-medium whitespace-pre-wrap">{message}</p>
         <button 
@@ -28,7 +28,7 @@ export function ConfirmModal({ message, onConfirm, onClose }: { message: string,
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }} 
         animate={{ scale: 1, opacity: 1 }} 
-        className="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center"
+        className="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center"
       >
         <p className="text-white text-lg mb-6 font-medium whitespace-pre-wrap">{message}</p>
         <div className="flex gap-3">

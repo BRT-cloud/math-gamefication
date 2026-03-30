@@ -318,20 +318,7 @@ export function Shop({ state, setState, onSync, previewItems, setPreviewItems }:
         )}
       </div>
 
-      {/* For testing purposes */}
-      <div className="mt-6 pt-4 border-t border-slate-100">
-        <button
-          onClick={() => {
-            playClickSound();
-            setState(prev => prev ? { ...prev, gold: prev.gold + 500 } : prev);
-            if (onSync) onSync();
-          }}
-          className="w-full py-3 bg-emerald-100 text-emerald-700 rounded-xl font-bold hover:bg-emerald-200 transition-colors flex items-center justify-center gap-2"
-        >
-          <Coins className="w-5 h-5" />
-          테스트용: 500G 획득
-        </button>
-      </div>
+      {/* For testing purposes removed */}
     </div>
   );
 }

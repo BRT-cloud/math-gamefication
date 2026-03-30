@@ -20,7 +20,7 @@ export function AvatarRoom({ state, setState, onBack, onSync }: AvatarRoomProps)
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center p-4 md:p-8 font-sans">
-      <div className="w-full max-w-6xl">
+      <div className="w-full max-w-7xl">
         <header className="mb-8 flex items-center gap-4">
           <button 
             onClick={() => { playClickSound(); onBack(); }}
@@ -38,28 +38,22 @@ export function AvatarRoom({ state, setState, onBack, onSync }: AvatarRoomProps)
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* 3D Canvas Area */}
-          <div className="lg:col-span-3 h-[500px] lg:h-[600px] bg-slate-800 rounded-3xl shadow-2xl overflow-hidden relative border border-slate-700">
+          <div className="lg:col-span-3 h-[500px] lg:h-[600px] bg-white rounded-3xl shadow-2xl overflow-hidden relative border border-slate-200">
             {/* Performance mode: gl={{ antialias: false, powerPreference: "high-performance" }} */}
             <Canvas
               camera={{ position: [0, 2, 8], fov: 45 }}
               gl={{ antialias: false, powerPreference: "high-performance" }}
               dpr={[1, 1.5]} // Limit pixel ratio for performance
             >
-              <color attach="background" args={['#1e293b']} />
+              <color attach="background" args={['#ffffff']} />
               
               {/* Peeps Style Lighting */}
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 5, 5]} intensity={0.8} castShadow={false} />
-              <directionalLight position={[-5, 5, -5]} intensity={0.4} castShadow={false} />
-              <directionalLight position={[0, 5, 5]} intensity={0.3} castShadow={false} />
+              <ambientLight intensity={0.8} />
+              <directionalLight position={[5, 5, 5]} intensity={0.6} castShadow={false} />
+              <directionalLight position={[-5, 5, -5]} intensity={0.3} castShadow={false} />
               
               <Suspense fallback={null}>
                 <Avatar state={state} previewItems={previewItems} />
-                {/* Fake shadow for grounding */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.49, 0]}>
-                  <circleGeometry args={[1.5, 32]} />
-                  <meshBasicMaterial color="#000000" transparent opacity={0.2} />
-                </mesh>
               </Suspense>
 
               {/* Controls */}

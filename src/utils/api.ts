@@ -2,7 +2,7 @@
 import { UserState } from './storage';
 
 const API_URL = import.meta.env.VITE_GOOGLE_SHEETS_API_URL || '';
-const TIMEOUT_MS = 3000; // 3 seconds timeout
+const TIMEOUT_MS = 8000; // Increased to 8 seconds for better reliability with GAS cold starts
 
 export const fetchUserData = async (nickname: string): Promise<UserState | null> => {
   if (!API_URL) {
@@ -11,7 +11,9 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
   }
   
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(new Error('Timeout')), TIMEOUT_MS);
+  const id = setTimeout(() => {
+    controller.abort();
+  }, TIMEOUT_MS);
   
   try {
     const separator = API_URL.includes('?') ? '&' : '?';
@@ -51,9 +53,14 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
     return null;
   } catch (error) {
     clearTimeout(id);
+    
+    const isTimeout = error instanceof Error && (error.name === 'AbortError' || error.message === 'Timeout');
+    const errorMessage = isTimeout ? '서버 응답 시간이 초과되었습니다.' : (error instanceof Error ? error.message : String(error));
+    
     // Log a more helpful and less scary message
-    console.warn('Google Sheets API 연동 실패 (로컬 데이터로 대체됩니다):', error instanceof Error ? error.message : String(error));
+    console.warn(`Google Sheets API 연동 실패 (${isTimeout ? '타임아웃' : '에러'}):`, errorMessage);
     console.warn('💡 팁: Google Apps Script 배포 시 "액세스 권한이 있는 사용자"를 "모든 사용자"로 설정했는지 확인하세요.');
+    
     throw error;
   }
 };
@@ -64,7 +71,9 @@ export const syncUserData = async (state: UserState, totalAttempted: number = 0)
   const accuracy = totalAttempted > 0 ? Math.round((state.total_score / totalAttempted) * 100) : 0;
   
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(new Error('Timeout')), TIMEOUT_MS);
+  const id = setTimeout(() => {
+    controller.abort();
+  }, TIMEOUT_MS);
   
   try {
     const separator = API_URL.includes('?') ? '&' : '?';
@@ -89,6 +98,7 @@ export const syncUserData = async (state: UserState, totalAttempted: number = 0)
     clearTimeout(id);
   } catch (error) {
     clearTimeout(id);
-    console.warn('Google Sheets API 동기화 실패:', error instanceof Error ? error.message : String(error));
+    const isTimeout = error instanceof Error && (error.name === 'AbortError' || error.message === 'Timeout');
+    console.warn(`Google Sheets API 동기화 실패 (${isTimeout ? '타임아웃' : '에러'}):`, error instanceof Error ? error.message : String(error));
   }
 };

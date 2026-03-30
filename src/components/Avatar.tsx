@@ -86,11 +86,12 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
   const avatarColors = state.avatarColors;
 
   // Merge equipped items with preview items
+  // If previewItems[type] is null or undefined, use the equipped item
   const activeItems = {
-    head: previewItems.head !== undefined ? previewItems.head : state.equippedItems.head,
-    torso: previewItems.torso !== undefined ? previewItems.torso : state.equippedItems.torso,
-    legs: previewItems.legs !== undefined ? previewItems.legs : state.equippedItems.legs,
-    rightHand: previewItems.rightHand !== undefined ? previewItems.rightHand : state.equippedItems.rightHand,
+    head: previewItems.head || state.equippedItems.head,
+    torso: previewItems.torso || state.equippedItems.torso,
+    legs: previewItems.legs || state.equippedItems.legs,
+    rightHand: previewItems.rightHand || state.equippedItems.rightHand,
   };
 
   // Backward compatibility for golden crown
@@ -101,14 +102,14 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
   // Simple idle animation (breathing)
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.05 - 0.5;
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.05 - 1.5;
       // 약간의 자연스러운 회전
       groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
     }
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.5, 0]}>
+    <group ref={groupRef} position={[0, -1.5, 0]}>
       {/* ==========================================
           LEGS NODE (하체 노드 - 최하단)
       ========================================== */}
@@ -171,6 +172,8 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
           fallback={
             activeItems.torso === 'shirt_blue' ? (
               <mesh><capsuleGeometry args={[0.65, 1.0, 4, 16]} /><meshStandardMaterial color="#3b82f6" roughness={0.7} /></mesh>
+            ) : activeItems.torso === 'shirt_red' ? (
+              <mesh><capsuleGeometry args={[0.65, 1.0, 4, 16]} /><meshStandardMaterial color="#ef4444" roughness={0.7} /></mesh>
             ) : activeItems.torso === 'suit_black' ? (
               <group>
                 <mesh><capsuleGeometry args={[0.65, 1.0, 4, 16]} /><meshStandardMaterial color="#171717" roughness={0.9} /></mesh>
@@ -240,7 +243,7 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
             <ModularPart 
               itemId={activeItems.rightHand} 
               fallback={
-                activeItems.rightHand === 'sword_wooden' ? (
+                activeItems.rightHand === 'sword_wood' || activeItems.rightHand === 'sword_wooden' ? (
                   <group rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
                     <mesh position={[0, 0, 0]}><cylinderGeometry args={[0.05, 0.05, 0.4]} /><meshStandardMaterial color="#8B4513" /></mesh>
                     <mesh position={[0, 0.2, 0]}><boxGeometry args={[0.4, 0.1, 0.1]} /><meshStandardMaterial color="#654321" /></mesh>
@@ -321,6 +324,11 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
                   <group position={[0, 0, 0]}>
                     <mesh position={[0, 0.1, 0]}><sphereGeometry args={[0.72, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} /><meshStandardMaterial color="#ef4444" roughness={0.8} /></mesh>
                     <mesh position={[0, 0.1, 0.4]} rotation={[-0.1, 0, 0]}><cylinderGeometry args={[0.7, 0.7, 0.05, 32, 1, false, 0, Math.PI]} /><meshStandardMaterial color="#ef4444" roughness={0.8} /></mesh>
+                  </group>
+                ) : activeItems.head === 'cap_blue' ? (
+                  <group position={[0, 0, 0]}>
+                    <mesh position={[0, 0.1, 0]}><sphereGeometry args={[0.72, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} /><meshStandardMaterial color="#3b82f6" roughness={0.8} /></mesh>
+                    <mesh position={[0, 0.1, 0.4]} rotation={[-0.1, 0, 0]}><cylinderGeometry args={[0.7, 0.7, 0.05, 32, 1, false, 0, Math.PI]} /><meshStandardMaterial color="#3b82f6" roughness={0.8} /></mesh>
                   </group>
                 ) : activeItems.head === 'hat_wizard' ? (
                   <group position={[0, 0.2, 0]}>
