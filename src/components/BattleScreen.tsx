@@ -50,8 +50,8 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
     if (mode === 'review' && reviewProblems) {
       setProblems(reviewProblems);
     } else {
-      // Mid-boss (101-114): 15 problems, Final boss (115): 20 problems
-      const count = stage > 100 ? (stage === 115 ? 20 : 15) : 10;
+      // Mid-boss (101-103): 15 problems, Final boss (104): 20 problems
+      const count = stage > 100 ? (stage === 104 ? 20 : 15) : 10;
       setProblems(generateProblems(stage, count));
     }
   }, [stage, mode, reviewProblems]);
@@ -60,9 +60,9 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
   const currentProblem = problems[currentIndex];
   const remainingHP = totalProblems - currentIndex;
 
-  const isMidBoss = stage > 100 && stage < 115;
-  const isFinalBoss = stage === 115;
-  const isStageBoss = mode === 'normal' && currentIndex === totalProblems - 1 && stage <= 15;
+  const isMidBoss = stage > 100 && stage < 104;
+  const isFinalBoss = stage === 104;
+  const isStageBoss = mode === 'normal' && currentIndex === totalProblems - 1 && stage <= 20;
   const isBossMode = isMidBoss || isFinalBoss || isStageBoss;
 
   // Boss BGM
@@ -597,8 +597,12 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
           >
             {isFinalBoss ? (
               <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]'}>🤖</span>
-            ) : isMidBoss ? (
+            ) : stage === 101 ? (
               <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(249,115,22,0.8)]'}>🐉</span>
+            ) : stage === 102 ? (
+              <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]'}>🦾</span>
+            ) : stage === 103 ? (
+              <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]'}>👹</span>
             ) : isStageBoss ? (
               <span className={feedback === 'correct' ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]'}>🧌</span>
             ) : (

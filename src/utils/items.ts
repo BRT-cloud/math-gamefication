@@ -6,6 +6,7 @@ export interface ShopItem {
   type: ItemType;
   price: number;
   desc: string;
+  isRewardOnly?: boolean;
 }
 
 export const SHOP_ITEMS: ShopItem[] = [
@@ -18,6 +19,7 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'crown_gold', name: '황금 왕관', type: 'head', price: 1000, desc: '왕의 상징인 황금 왕관입니다.' },
   { id: 'mask_cyberpunk', name: '사이버 마스크', type: 'head', price: 600, desc: '미래지향적인 네온 마스크입니다.' },
   { id: 'halo_angel', name: '천사의 헤일로', type: 'head', price: 800, desc: '성스러운 빛이 나는 헤일로입니다.' },
+  { id: 'golden_crown_reward', name: '황금 왕관 (전설)', type: 'head', price: 0, desc: '수학의 주권자를 물리친 증표입니다.', isRewardOnly: true },
   
   // Torso
   { id: 'shirt_blue', name: '파란색 티셔츠', type: 'torso', price: 200, desc: '시원한 파란색 반팔 티셔츠입니다.' },
@@ -26,6 +28,7 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'armor_iron', name: '기사단 철갑옷', type: 'torso', price: 500, desc: '단단한 철로 만든 기사단 갑옷입니다.' },
   { id: 'jacket_leather', name: '가죽 자켓', type: 'torso', price: 450, desc: '거친 매력의 검은색 가죽 자켓입니다.' },
   { id: 'armor_golden', name: '황금 갑옷', type: 'torso', price: 1200, desc: '눈부시게 빛나는 전설의 황금 갑옷입니다.' },
+  { id: 'magic_armor', name: '마법 갑옷', type: 'torso', price: 0, desc: '중간 보스 3을 물리친 보상입니다.', isRewardOnly: true },
   
   // Legs
   { id: 'pants_black', name: '검은색 바지', type: 'legs', price: 150, desc: '깔끔한 검은색 바지입니다.' },
@@ -43,4 +46,6 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'wand_magic', name: '마법 지팡이', type: 'rightHand', price: 600, desc: '신비한 마력이 깃든 지팡이입니다.' },
   { id: 'axe_battle', name: '전투 도끼', type: 'rightHand', price: 550, desc: '파괴적인 위력을 자랑하는 양날 도끼입니다.' },
   { id: 'staff_crystal', name: '크리스탈 스태프', type: 'rightHand', price: 800, desc: '거대한 크리스탈이 박힌 대마법사의 지팡이입니다.' },
+  { id: 'silver_shield', name: '은색 방패', type: 'rightHand', price: 0, desc: '중간 보스 1을 물리친 보상입니다.', isRewardOnly: true },
+  { id: 'steel_sword', name: '강철 검', type: 'rightHand', price: 0, desc: '중간 보스 2를 물리친 보상입니다.', isRewardOnly: true },
 ];

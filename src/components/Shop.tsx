@@ -146,7 +146,7 @@ export function Shop({ state, setState, onSync, previewItems, setPreviewItems }:
     }
   };
 
-  const filteredItems = SHOP_ITEMS.filter(item => item.type === selectedCategory);
+  const filteredItems = SHOP_ITEMS.filter(item => item.type === selectedCategory && !item.isRewardOnly);
 
   return (
     <div className="bg-white rounded-3xl shadow-xl p-6 flex flex-col h-full max-h-[600px] border border-slate-200">

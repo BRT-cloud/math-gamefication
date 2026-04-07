@@ -119,7 +119,7 @@ export default function App() {
       ? STAGES[currentStageIndex + 1].id 
       : null;
 
-    const totalProblems = selectedStage > 100 ? (selectedStage === 115 ? 20 : 15) : 10;
+    const totalProblems = selectedStage > 100 ? (selectedStage === 104 ? 20 : 15) : 10;
     const isPassed = score >= Math.floor(totalProblems * 0.8);
     const isNewStageUnlocked = isPassed && nextStageId !== null && !state.unlocked_stages.includes(nextStageId);
     
@@ -127,9 +127,13 @@ export default function App() {
       playFanfare();
     }
 
-    // Golden Crown Logic
-    const isPerfectFinalBoss = selectedStage === 115 && score === 20;
-    if (isPerfectFinalBoss && state.items.golden_crown === 0) {
+    // Boss Rewards Logic
+    const isFinalBoss = selectedStage === 104;
+    const isBoss1 = selectedStage === 101;
+    const isBoss2 = selectedStage === 102;
+    const isBoss3 = selectedStage === 103;
+    
+    if (isFinalBoss && isPassed && state.items.golden_crown === 0) {
       setShowCrownPopup(true);
       playFanfare();
     }
@@ -155,14 +159,25 @@ export default function App() {
         });
       }
 
+      const newOwnedItems = [...prev.ownedItems];
+      if (isBoss1 && isPassed && !newOwnedItems.includes('silver_shield')) newOwnedItems.push('silver_shield');
+      if (isBoss2 && isPassed && !newOwnedItems.includes('steel_sword')) newOwnedItems.push('steel_sword');
+      if (isBoss3 && isPassed && !newOwnedItems.includes('magic_armor')) newOwnedItems.push('magic_armor');
+      if (isFinalBoss && isPassed && !newOwnedItems.includes('golden_crown_reward')) newOwnedItems.push('golden_crown_reward');
+
       return {
         ...prev,
         total_score: prev.total_score + score,
         gold: prev.gold + earnedGold,
         wrong_problems: newWrongProblems,
+        ownedItems: newOwnedItems,
+        equippedItems: {
+          ...prev.equippedItems,
+          head: (isFinalBoss && isPassed) ? 'golden_crown_reward' : prev.equippedItems.head
+        },
         items: {
           ...prev.items,
-          golden_crown: isPerfectFinalBoss ? 1 : prev.items.golden_crown
+          golden_crown: (isFinalBoss && isPassed) ? 1 : prev.items.golden_crown
         },
         unlocked_stages: isNewStageUnlocked && nextStageId !== null
           ? [...prev.unlocked_stages, nextStageId] 
@@ -258,7 +273,7 @@ export default function App() {
           ? STAGES[currentStageIndex + 1].id 
           : null;
         
-        const totalProblems = selectedStage > 100 ? (selectedStage === 115 ? 20 : 15) : 10;
+        const totalProblems = selectedStage > 100 ? (selectedStage === 104 ? 20 : 15) : 10;
         const isUnlockedNext = lastScore >= Math.floor(totalProblems * 0.8) && nextStageId !== null && battleMode === 'normal';
 
         return (
