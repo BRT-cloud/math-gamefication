@@ -41,6 +41,10 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
   const [hasShield, setHasShield] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [luckyTurns, setLuckyTurns] = useState(0);
+  const [magnetTurns, setMagnetTurns] = useState(0);
+  const [luckyDiceActive, setLuckyDiceActive] = useState(false);
+  const [magnetActive, setMagnetActive] = useState(false);
+  const [resurrectActive, setResurrectActive] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [confirmItem, setConfirmItem] = useState<{ id: keyof UserState['items'], name: string } | null>(null);
 
@@ -116,13 +120,18 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
     if (itemId === 'sacred_shield' && hasShield) return;
     if (itemId === 'magic_magnifier' && showHint) return;
     if (itemId === 'lucky_horseshoe' && luckyTurns > 0) return;
+    if (itemId === 'answer_magnet' && magnetTurns > 0) return;
+    if (itemId === 'lucky_dice' && luckyDiceActive) return;
 
     const itemNames: Record<keyof UserState['items'], string> = {
       heart_potion: '하트 포션',
       sacred_shield: '신성한 방패',
       magic_magnifier: '마법 돋보기',
       lucky_horseshoe: '행운의 편자',
-      golden_crown: '황금 왕관'
+      golden_crown: '황금 왕관',
+      answer_magnet: '정답 자석',
+      lucky_dice: '행운의 주사위',
+      resurrection_feather: '부활의 깃털'
     };
 
     setConfirmItem({ id: itemId, name: itemNames[itemId] });
@@ -152,6 +161,10 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
       setShowHint(true);
     } else if (itemId === 'lucky_horseshoe') {
       setLuckyTurns(3);
+    } else if (itemId === 'answer_magnet') {
+      setMagnetTurns(3);
+    } else if (itemId === 'lucky_dice') {
+      setLuckyDiceActive(true);
     }
     
     setConfirmItem(null);
@@ -197,6 +210,9 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
     
     if (luckyTurns > 0) {
       setLuckyTurns(c => c - 1);
+    }
+    if (magnetTurns > 0) {
+      setMagnetTurns(c => c - 1);
     }
 
     if (isCorrect) {
@@ -270,26 +286,45 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
       if (hasShield) {
         setShieldActive(true);
         setHasShield(false);
+      } else if (magnetTurns > 0) {
+        setMagnetActive(true);
       } else {
-        setHearts(h => Math.max(0, h - 1));
+        const newHearts = hearts - 1;
+        if (newHearts <= 0 && state.items.resurrection_feather > 0) {
+          setResurrectActive(true);
+          setHearts(2); // Revive with 2 hearts (half of max 3, rounded up)
+          setState(prev => prev ? {
+            ...prev,
+            items: { ...prev.items, resurrection_feather: prev.items.resurrection_feather - 1 }
+          } : prev);
+        } else {
+          setHearts(Math.max(0, newHearts));
+        }
       }
     }
 
     setTimeout(() => {
       setFeedback(null);
       setShieldActive(false);
+      setMagnetActive(false);
+      setResurrectActive(false);
       setInput('');
       setSelectedUnit(null);
       setShowHint(false);
       
-      const isDead = (!isCorrect && !hasShield && hearts - 1 <= 0);
+      const isDead = (!isCorrect && !hasShield && !(magnetTurns > 0) && hearts <= 0);
       
       if (currentIndex < totalProblems - 1 && !isDead) {
         setCurrentIndex((i) => i + 1);
       } else {
-        onComplete(score + (isCorrect ? 1 : 0), earnedGold + currentGoldReward, wrongProblems);
+        let finalGold = earnedGold + currentGoldReward;
+        if (luckyDiceActive && !isDead) {
+          const multiplier = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+          finalGold *= multiplier;
+        }
+        onComplete(score + (isCorrect ? 1 : 0), finalGold, wrongProblems);
       }
-    }, shieldActive ? 2500 : 1500);
+    }, shieldActive || magnetActive || resurrectActive ? 2500 : 1500);
   };
 
   return (
@@ -545,6 +580,58 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
             </motion.div>
           </motion.div>
         )}
+        {magnetActive && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none"
+          >
+            <motion.div
+              initial={{ scale: 0, y: 50 }}
+              animate={{ scale: 1.5, y: 0 }}
+              exit={{ scale: 2, opacity: 0, filter: 'blur(10px)' }}
+              transition={{ type: 'spring', damping: 12 }}
+              className="flex flex-col items-center"
+            >
+              <Magnet className="w-32 h-32 text-rose-400 drop-shadow-[0_0_30px_rgba(244,63,94,0.8)]" />
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6 text-2xl font-black text-rose-400 bg-slate-900/80 px-6 py-3 rounded-full border border-rose-400/50"
+              >
+                정답 자석이 오답을 막아주었습니다!
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+        {resurrectActive && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-white/20 backdrop-blur-sm pointer-events-none"
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: 180 }}
+              animate={{ scale: 1.5, rotate: 0 }}
+              exit={{ scale: 2, opacity: 0, filter: 'blur(10px)' }}
+              transition={{ type: 'spring', damping: 12 }}
+              className="flex flex-col items-center"
+            >
+              <Feather className="w-32 h-32 text-amber-300 drop-shadow-[0_0_40px_rgba(252,211,77,1)]" />
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6 text-2xl font-black text-amber-300 bg-slate-900/80 px-6 py-3 rounded-full border border-amber-300/50"
+              >
+                부활의 깃털로 다시 일어납니다!
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Header */}
@@ -658,11 +745,11 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
 
           {/* Input Display */}
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center justify-center space-x-4">
-              <div className={`text-6xl font-mono font-black border-b-4 pb-2 min-w-[120px] text-center transition-colors drop-shadow-md ${
-                feedback === 'correct' ? 'text-emerald-400 border-emerald-400' :
-                feedback === 'incorrect' ? 'text-rose-400 border-rose-400' :
-                'text-white border-white/50'
+            <div className="flex items-center justify-center gap-6">
+              <div className={`text-5xl md:text-7xl font-mono font-black border-4 rounded-3xl p-6 min-w-[180px] text-center transition-all bg-black/40 backdrop-blur-md shadow-2xl ${
+                feedback === 'correct' ? 'text-emerald-400 border-emerald-400 ring-4 ring-emerald-400/20' :
+                feedback === 'incorrect' ? 'text-rose-400 border-rose-400 animate-shake' :
+                'text-white border-white/30'
               }`}>
                 {input || '?'}
               </div>
@@ -670,20 +757,20 @@ export function BattleScreen({ stage, mode = 'normal', reviewProblems, state, se
               <AnimatePresence>
                 {feedback === 'correct' && (
                   <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
                     exit={{ scale: 0, opacity: 0 }}
                   >
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400 drop-shadow-md" />
+                    <CheckCircle2 className="w-16 h-16 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
                   </motion.div>
                 )}
                 {feedback === 'incorrect' && (
                   <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    initial={{ scale: 0, opacity: 0, x: 20 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
                     exit={{ scale: 0, opacity: 0 }}
                   >
-                    <XCircle className="w-12 h-12 text-rose-400 drop-shadow-md" />
+                    <XCircle className="w-16 h-16 text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.5)]" />
                   </motion.div>
                 )}
               </AnimatePresence>

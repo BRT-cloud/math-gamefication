@@ -18,6 +18,9 @@ export type UserState = {
     magic_magnifier: number;
     lucky_horseshoe: number;
     golden_crown: number;
+    answer_magnet: number;
+    lucky_dice: number;
+    resurrection_feather: number;
   };
   doubleXpCharges: number;
   equippedItems: {
@@ -25,6 +28,9 @@ export type UserState = {
     torso: string | null;
     legs: string | null;
     rightHand: string | null;
+    leftHand: string | null;
+    aura: string | null;
+    back: string | null;
   };
   ownedItems: string[];
 };
@@ -52,6 +58,9 @@ export const defaultState: UserState = {
     magic_magnifier: 0,
     lucky_horseshoe: 0,
     golden_crown: 0,
+    answer_magnet: 0,
+    lucky_dice: 0,
+    resurrection_feather: 0,
   },
   doubleXpCharges: 0,
   equippedItems: {
@@ -59,6 +68,9 @@ export const defaultState: UserState = {
     torso: null,
     legs: null,
     rightHand: null,
+    leftHand: null,
+    aura: null,
+    back: null,
   },
   ownedItems: [],
 };
@@ -82,6 +94,9 @@ export function loadState(): UserState {
           magic_magnifier: Number(parsed.items?.magic_magnifier) || 0,
           lucky_horseshoe: Number(parsed.items?.lucky_horseshoe) || Number(parsed.items?.magnet) || 0,
           golden_crown: Number(parsed.items?.golden_crown) || 0,
+          answer_magnet: Number(parsed.items?.answer_magnet) || 0,
+          lucky_dice: Number(parsed.items?.lucky_dice) || 0,
+          resurrection_feather: Number(parsed.items?.resurrection_feather) || 0,
         },
         doubleXpCharges: parsed.doubleXpCharges || 0,
         equippedItems: parsed.equippedItems || defaultState.equippedItems,

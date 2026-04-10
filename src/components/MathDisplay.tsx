@@ -1,4 +1,5 @@
 import React from 'react';
+import katex from 'katex';
 
 type MathDisplayProps = {
   text: string;
@@ -6,35 +7,44 @@ type MathDisplayProps = {
 };
 
 export function MathDisplay({ text, className = "" }: MathDisplayProps) {
-  // Simple parser for \frac{A}{B} and \n
-  const parts = text.split(/(\\frac{\d+}{\d+}|\n)/g);
+  // Split by newlines first
+  const lines = text.split('\n');
 
   return (
-    <div className={`flex flex-wrap items-center font-bold font-mono ${className}`}>
-      {parts.map((part, i) => {
-        if (part === '\n') {
-          return <div key={i} className="w-full h-0" />;
-        }
-        if (part.startsWith('\\frac{')) {
-          const match = part.match(/\\frac{(\d+)}{(\d+)}/);
-          if (match) {
-            const num = match[1];
-            const den = match[2];
-            return (
-              <div key={i} className="flex flex-col items-center mx-2 inline-flex align-middle">
-                <span className="border-b-[3px] border-current px-1 leading-none pb-1">{num}</span>
-                <span className="px-1 leading-none pt-1">{den}</span>
-              </div>
-            );
-          }
-        }
-        
-        // Handle other math symbols
-        let displayPart = part;
-        displayPart = displayPart.replace(/\\times/g, '×');
-        displayPart = displayPart.replace(/\\div/g, '÷');
-        
-        return <span key={i} className="whitespace-pre-wrap break-keep">{displayPart}</span>;
+    <div className={`flex flex-col gap-3 ${className}`}>
+      {lines.map((line, i) => {
+        // Split line into math and non-math parts
+        // This regex looks for \frac{...}{...}, \times, \div
+        const parts = line.split(/(\\frac\{[^{}]*\}\{[^{}]*\}|\\times|\\div)/g);
+
+        return (
+          <div key={i} className="flex flex-wrap items-center justify-center gap-x-1 leading-relaxed">
+            {parts.map((part, j) => {
+              if (part.startsWith('\\')) {
+                try {
+                  const html = katex.renderToString(part, {
+                    throwOnError: false,
+                    displayMode: false
+                  });
+                  return (
+                    <span 
+                      key={j} 
+                      className="inline-block align-middle mx-0.5"
+                      dangerouslySetInnerHTML={{ __html: html }} 
+                    />
+                  );
+                } catch (e) {
+                  return <span key={j}>{part}</span>;
+                }
+              }
+              return (
+                <span key={j} className="whitespace-pre-wrap">
+                  {part}
+                </span>
+              );
+            })}
+          </div>
+        );
       })}
     </div>
   );

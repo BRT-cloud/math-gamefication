@@ -1,7 +1,7 @@
-import React, { useRef, useMemo, Suspense } from 'react';
+import React, { useRef, useMemo, Suspense, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group } from 'three';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, Sparkles } from '@react-three/drei';
 import { UserState } from '../utils/storage';
 
 // 외부 고퀄리티 모델 URL 매핑 (실제 에셋 URL로 교체하여 사용)
@@ -48,6 +48,14 @@ const MODEL_URLS: Record<string, string> = {
   wand_magic: '',
   axe_battle: '',
   staff_crystal: '',
+  fire_sword: '',
+  thunder_staff: '',
+
+  // Shop Items - LeftHand
+  ice_shield: '',
+
+  // Shop Items - Back
+  burning_thursday_cloak: '',
 };
 
 // GLTF 모델을 로드하는 컴포넌트 (URL이 없거나 로드 실패 시 fallback 렌더링)
@@ -84,14 +92,23 @@ interface AvatarProps {
 export function Avatar({ state, previewItems = {} }: AvatarProps) {
   const groupRef = useRef<Group>(null);
   const avatarColors = state.avatarColors;
+  const [jumpTime, setJumpTime] = useState(0);
+
+  // Trigger jump when equipped items change
+  useEffect(() => {
+    setJumpTime(Date.now());
+  }, [state.equippedItems]);
 
   // Merge equipped items with preview items
   // If previewItems[type] is null or undefined, use the equipped item
   const activeItems = {
-    head: previewItems.head || state.equippedItems.head,
-    torso: previewItems.torso || state.equippedItems.torso,
-    legs: previewItems.legs || state.equippedItems.legs,
-    rightHand: previewItems.rightHand || state.equippedItems.rightHand,
+    head: previewItems.head !== undefined ? previewItems.head : state.equippedItems.head,
+    torso: previewItems.torso !== undefined ? previewItems.torso : state.equippedItems.torso,
+    legs: previewItems.legs !== undefined ? previewItems.legs : state.equippedItems.legs,
+    rightHand: previewItems.rightHand !== undefined ? previewItems.rightHand : state.equippedItems.rightHand,
+    leftHand: previewItems.leftHand !== undefined ? previewItems.leftHand : state.equippedItems.leftHand,
+    aura: previewItems.aura !== undefined ? previewItems.aura : state.equippedItems.aura,
+    back: previewItems.back !== undefined ? previewItems.back : state.equippedItems.back,
   };
 
   // Backward compatibility for golden crown
@@ -99,17 +116,41 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
     activeItems.head = 'crown_gold';
   }
 
-  // Simple idle animation (breathing)
-  useFrame((state) => {
+  // Simple idle animation (breathing) + Jump animation
+  useFrame((rootState) => {
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.05 - 1.5;
-      // 약간의 자연스러운 회전
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+      const timeSinceJump = (Date.now() - jumpTime) / 1000;
+      let jumpOffset = 0;
+      
+      if (timeSinceJump < 0.5) {
+        // Jump up and down (parabola: y = -4 * h * t * (t - 1))
+        // h = 1.0 (jump height), duration = 0.5s
+        const t = timeSinceJump / 0.5;
+        jumpOffset = Math.sin(t * Math.PI) * 1.0;
+        
+        // Spin during jump
+        groupRef.current.rotation.y = t * Math.PI * 2;
+      } else {
+        // Idle rotation
+        groupRef.current.rotation.y = Math.sin(rootState.clock.elapsedTime * 0.5) * 0.05;
+      }
+
+      groupRef.current.position.y = (Math.sin(rootState.clock.elapsedTime * 2) * 0.05 - 1.5) + jumpOffset;
     }
   });
 
   return (
     <group ref={groupRef} position={[0, -1.5, 0]}>
+      {/* ==========================================
+          AURA NODE (VFX)
+      ========================================== */}
+      {activeItems.aura === 'fairy_dust' && (
+        <Sparkles count={50} scale={3} size={4} speed={0.4} opacity={0.8} color="#fbcfe8" position={[0, 1, -0.5]} />
+      )}
+      {activeItems.aura === 'flames_of_wrath' && (
+        <Sparkles count={100} scale={[1.5, 2, 1.5]} size={6} speed={1.5} opacity={0.9} color="#ef4444" position={[0, 0.5, 0]} />
+      )}
+
       {/* ==========================================
           LEGS NODE (하체 노드 - 최하단)
       ========================================== */}
@@ -167,6 +208,17 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
           TORSO NODE (상체 노드 - 하체 위에 위치)
       ========================================== */}
       <group name="TorsoNode" position={[0, 1.5, 0]}>
+        {/* BACK ATTACHMENT (Cloak) */}
+        {activeItems.back === 'burning_thursday_cloak' && (
+          <group position={[0, 0.2, -0.6]} rotation={[0.2, 0, 0]}>
+            <mesh>
+              <boxGeometry args={[1.2, 1.8, 0.1]} />
+              <meshStandardMaterial color="#ea580c" roughness={0.9} />
+            </mesh>
+            <Sparkles count={30} scale={[1.2, 1.8, 0.2]} size={3} speed={1} opacity={0.6} color="#fef08a" position={[0, -0.5, -0.1]} />
+          </group>
+        )}
+
         <ModularPart 
           itemId={activeItems.torso || 'torso_base'} 
           fallback={
@@ -201,6 +253,12 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
                 <mesh position={[0, 0.2, 0.65]}><boxGeometry args={[0.4, 0.4, 0.2]} /><meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.1} /></mesh>
                 <mesh position={[0, -0.2, 0.68]}><boxGeometry args={[0.2, 0.2, 0.1]} /><meshStandardMaterial color="#ef4444" /></mesh>
               </group>
+            ) : activeItems.torso === 'void_armor' ? (
+              <group>
+                <mesh><capsuleGeometry args={[0.7, 1.1, 4, 16]} /><meshStandardMaterial color="#3b0764" metalness={0.5} roughness={0.4} /></mesh>
+                <mesh position={[0, 0.2, 0.65]}><boxGeometry args={[0.4, 0.4, 0.2]} /><meshStandardMaterial color="#581c87" metalness={0.8} roughness={0.2} /></mesh>
+                <Sparkles count={40} scale={1.5} size={4} speed={0.5} opacity={0.7} color="#a855f7" position={[0, 0, 0]} />
+              </group>
             ) : (
               <mesh><capsuleGeometry args={[0.6, 1.0, 4, 16]} /><meshStandardMaterial color={avatarColors.body} roughness={0.5} /></mesh>
             )
@@ -219,6 +277,24 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
               </mesh>
             } 
           />
+          
+          {/* LEFT HAND ATTACHMENT */}
+          <group name="LeftHandAttachment" position={[0, -0.6, 0]}>
+            <ModularPart 
+              itemId={activeItems.leftHand} 
+              fallback={
+                activeItems.leftHand === 'ice_shield' ? (
+                  <group rotation={[0, -Math.PI / 2, 0]} position={[-0.2, 0, 0]}>
+                    <mesh position={[-0.1, 0, 0]}>
+                      <cylinderGeometry args={[0.5, 0.5, 0.1, 6]} />
+                      <meshStandardMaterial color="#7dd3fc" transparent opacity={0.6} metalness={0.8} roughness={0.1} />
+                    </mesh>
+                    <Sparkles count={20} scale={1} size={2} speed={0.2} opacity={0.8} color="#bae6fd" position={[-0.2, 0, 0]} />
+                  </group>
+                ) : null
+              }
+            />
+          </group>
         </group>
 
         {/* --- RIGHT ARM NODE --- */}
@@ -255,6 +331,13 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
                     <mesh position={[0, 0.2, 0]}><boxGeometry args={[0.5, 0.05, 0.1]} /><meshStandardMaterial color="#f59e0b" metalness={0.8} roughness={0.2} /></mesh>
                     <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.1, 1.1, 0.02]} /><meshStandardMaterial color="#e2e8f0" metalness={0.8} roughness={0.2} /></mesh>
                   </group>
+                ) : activeItems.rightHand === 'fire_sword' ? (
+                  <group rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+                    <mesh position={[0, 0, 0]}><cylinderGeometry args={[0.05, 0.05, 0.4]} /><meshStandardMaterial color="#450a0a" /></mesh>
+                    <mesh position={[0, 0.2, 0]}><boxGeometry args={[0.6, 0.1, 0.15]} /><meshStandardMaterial color="#b91c1c" metalness={0.8} roughness={0.2} /></mesh>
+                    <mesh position={[0, 0.9, 0]}><boxGeometry args={[0.15, 1.3, 0.04]} /><meshStandardMaterial color="#fca5a5" emissive="#ef4444" emissiveIntensity={0.5} /></mesh>
+                    <Sparkles count={40} scale={[0.3, 1.5, 0.3]} size={3} speed={2} opacity={0.8} color="#f87171" position={[0, 0.9, 0]} />
+                  </group>
                 ) : activeItems.rightHand === 'book_magic' ? (
                   <group rotation={[0, Math.PI / 2, 0]} position={[0.2, 0, 0]}>
                     <mesh position={[0, 0, 0]}><boxGeometry args={[0.4, 0.5, 0.1]} /><meshStandardMaterial color="#7e22ce" /></mesh>
@@ -282,6 +365,12 @@ export function Avatar({ state, previewItems = {} }: AvatarProps) {
                     <mesh position={[0, 0.5, 0]}><cylinderGeometry args={[0.06, 0.04, 1.8]} /><meshStandardMaterial color="#1e3a8a" /></mesh>
                     <mesh position={[0, 1.5, 0]}><octahedronGeometry args={[0.25]} /><meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.8} transparent opacity={0.9} /></mesh>
                     <mesh position={[0, 1.5, 0]}><sphereGeometry args={[0.3, 8, 8]} /><meshStandardMaterial color="#bae6fd" wireframe /></mesh>
+                  </group>
+                ) : activeItems.rightHand === 'thunder_staff' ? (
+                  <group rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+                    <mesh position={[0, 0.5, 0]}><cylinderGeometry args={[0.05, 0.03, 2.0]} /><meshStandardMaterial color="#172554" /></mesh>
+                    <mesh position={[0, 1.6, 0]}><dodecahedronGeometry args={[0.3]} /><meshStandardMaterial color="#fde047" emissive="#eab308" emissiveIntensity={1} /></mesh>
+                    <Sparkles count={20} scale={0.8} size={5} speed={3} opacity={0.9} color="#fef08a" position={[0, 1.6, 0]} />
                   </group>
                 ) : null
               } 

@@ -32,6 +32,17 @@ export default function App() {
   const [showCrownPopup, setShowCrownPopup] = useState(false);
 
   useEffect(() => {
+    // Remove splash screen after app is ready
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => {
+          splash.style.visibility = 'hidden';
+        }, 500);
+      }, 1000);
+    }
+
     const loadedState = loadState();
     if (loadedState.nickname) {
       // Background sync on load if nickname exists
@@ -55,6 +66,17 @@ export default function App() {
       setState(loadedState);
     }
   }, []);
+
+  useEffect(() => {
+    if (currentScreen === 'battle') {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = '';
+      };
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [currentScreen]);
 
   const prevSyncTrigger = useRef(0);
 

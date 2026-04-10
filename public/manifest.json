@@ -1,0 +1,18 @@
+{
+  "name": "수학 원정대",
+  "short_name": "수학원정대",
+  "description": "재미있는 수학 문제 풀이 모험!",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#001529",
+  "theme_color": "#001529",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
