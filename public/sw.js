@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-expedition-v3';
+const CACHE_NAME = 'math-expedition-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

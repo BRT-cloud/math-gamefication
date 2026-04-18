@@ -24,7 +24,8 @@ export function MathDisplay({ text, className = "" }: MathDisplayProps) {
                 try {
                   const html = katex.renderToString(part, {
                     throwOnError: false,
-                    displayMode: false
+                    displayMode: false,
+                    output: 'html'
                   });
                   return (
                     <span 

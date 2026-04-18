@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, ShieldAlert, XCircle, CheckCircle2, Ghost, Shield, Zap, Search, Magnet, Skull } from 'lucide-react';
+import { Heart, ShieldAlert, XCircle, CheckCircle2, Ghost, Shield, Zap, Search, Magnet, Skull, Feather } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Keypad } from './Keypad';
 import { MathDisplay } from './MathDisplay';

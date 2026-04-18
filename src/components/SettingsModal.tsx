@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, Settings2, Trash2, Unlock, Coins, BookX } from 'lucide-react';
 import { UserState } from '../utils/storage';
@@ -21,19 +21,62 @@ export function SettingsModal({ state, setState, onClose, onSync }: SettingsModa
   const [passwordInput, setPasswordInput] = useState('');
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+
+  // Sync lockout timer visual feedback if necessary
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  useEffect(() => {
+    let timer: number;
+    if (lockoutUntil) {
+      timer = window.setInterval(() => {
+        const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+        if (remaining <= 0) {
+          setLockoutUntil(null);
+          setFailedAttempts(0);
+          setLockoutRemaining(0);
+          clearInterval(timer);
+        } else {
+          setLockoutRemaining(remaining);
+        }
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [lockoutUntil]);
 
   const checkPassword = () => {
-    if (passwordInput === '1010') {
+    const now = Date.now();
+    if (lockoutUntil && now < lockoutUntil) {
+      setAlertMessage(`보안을 위해 차단되었습니다. ${lockoutRemaining}초 후에 다시 시도하세요.`);
+      return;
+    }
+
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || '1010';
+    
+    if (passwordInput === adminPassword) {
       setIsAdminMode(true);
       setShowPasswordPrompt(false);
       setPasswordInput('');
+      setFailedAttempts(0);
+      setLockoutUntil(null);
       if (pendingAction) {
         pendingAction();
         setPendingAction(null);
       }
     } else {
       playClickSound();
-      setAlertMessage('비밀번호가 틀렸습니다.');
+      const newFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(newFailedAttempts);
+      
+      if (newFailedAttempts >= 5) {
+        const lockoutTime = now + 60 * 1000;
+        setLockoutUntil(lockoutTime);
+        setLockoutRemaining(60);
+        setAlertMessage('비밀번호를 5회 잘못 입력했습니다. 보안을 위해 1분간 차단됩니다.');
+      } else {
+        setAlertMessage(`비밀번호가 틀렸습니다. (남은 횟수: ${5 - newFailedAttempts})`);
+      }
       setPasswordInput('');
     }
   };

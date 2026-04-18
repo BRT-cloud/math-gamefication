@@ -33,15 +33,15 @@ export default function App() {
 
   useEffect(() => {
     // Remove splash screen after app is ready
-    const splash = document.getElementById('splash-screen');
-    if (splash) {
-      setTimeout(() => {
+    const hideSplash = () => {
+      const splash = document.getElementById('splash-screen');
+      if (splash) {
         splash.style.opacity = '0';
         setTimeout(() => {
           splash.style.visibility = 'hidden';
         }, 500);
-      }, 1000);
-    }
+      }
+    };
 
     const loadedState = loadState();
     if (loadedState.nickname) {
@@ -56,14 +56,17 @@ export default function App() {
         }
         setCurrentScreen('map');
         setIsSyncing(false);
+        hideSplash();
       }).catch(() => {
         setSyncMessage("서버 연결 실패, 로컬 데이터로 시작합니다.");
         setState(loadedState);
         setCurrentScreen('map');
         setIsSyncing(false);
+        hideSplash();
       });
     } else {
       setState(loadedState);
+      setTimeout(hideSplash, 1000);
     }
   }, []);
 
@@ -91,7 +94,7 @@ export default function App() {
     }
   }, [state, syncTrigger]);
 
-  if (!state) return null;
+  if (!state && !isSyncing) return null;
 
   const handleStart = async (nickname: string) => {
     setIsSyncing(true);
@@ -214,7 +217,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-900 font-sans">
-      {isSyncing && (
+      {(!state || isSyncing) && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
           <p className="text-white font-bold text-lg">{syncMessage}</p>

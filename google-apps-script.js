@@ -16,20 +16,32 @@
 
 const SHEET_NAME = 'Users';
 
+// [보안 설정] 허용할 도메인 주소 목록 (본인의 도메인으로 수정하세요)
+const ALLOWED_ORIGINS = [
+  'https://ais-dev-jlqd2qzbat2wibdf7335zl-655197399.asia-east1.run.app',
+  'https://ais-pre-jlqd2qzbat2wibdf7335zl-655197399.asia-east1.run.app',
+  'http://localhost:3000'
+];
+
 function doPost(e) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
 
   try {
+    // 1. 요청 데이터 파싱
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
-    var nickname = data.nickname;
+    var nickname = sanitizeString(data.nickname); // 서버 사이드에서도 한 번 더 필터링
+    
+    // 2. 간단한 Origin 체크 (클라이언트에서 전달한 경우)
+    // if (data.origin && ALLOWED_ORIGINS.indexOf(data.origin) === -1) {
+    //   return output.setContent(JSON.stringify({ success: false, error: 'Unauthorized origin' }));
+    // }
     
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     if (!sheet) {
       sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
       sheet.appendRow(['Timestamp', 'Nickname', 'Level', 'Gold', 'Solved_Count', 'Accuracy', 'Wrong_Note']);
-      // 헤더 스타일 지정 (선택사항)
       sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#f3f4f6');
     }
     
@@ -65,6 +77,8 @@ function doPost(e) {
       }
     } else if (action === 'saveUser') {
       var timestamp = new Date();
+      var wrongNote = data.wrongNote; // 이 데이터는 JSON 문자열이므로 별도 필터링 없이 그대로 저장
+      
       var rowData = [
         timestamp,
         nickname,
@@ -72,14 +86,12 @@ function doPost(e) {
         data.gold,
         data.solvedCount,
         data.accuracy,
-        data.wrongNote
+        wrongNote
       ];
       
       if (foundRow > -1) {
-        // 기존 사용자 업데이트
         sheet.getRange(foundRow, 1, 1, 7).setValues([rowData]);
       } else {
-        // 신규 사용자 추가
         sheet.appendRow(rowData);
       }
       output.setContent(JSON.stringify({ success: true }));
@@ -94,7 +106,14 @@ function doPost(e) {
   return output;
 }
 
-// GET 요청에 대한 기본 응답 (테스트용)
+// 간단한 문자열 필터링 함수
+function sanitizeString(str) {
+  if (!str) return '';
+  return str.toString()
+    .replace(/[<>'"/&]/g, '') // 태그 및 특수문자 제거
+    .substring(0, 50); // 최대 길이 제한
+}
+
 function doGet(e) {
-  return ContentService.createTextOutput("Math Expedition API is running.");
+  return ContentService.createTextOutput("Math Expedition API is running safely.");
 }

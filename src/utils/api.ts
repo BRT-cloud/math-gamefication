@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { UserState } from './storage';
+import { sanitizeInput } from './security';
 
 const API_URL = import.meta.env.VITE_GOOGLE_SHEETS_API_URL || '';
 const TIMEOUT_MS = 8000; // Increased to 8 seconds for better reliability with GAS cold starts
@@ -9,6 +10,8 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
     console.warn('API_URL is not defined. Using local storage fallback.');
     throw new Error('API_URL_MISSING');
   }
+  
+  const sanitizedNickname = sanitizeInput(nickname);
   
   const controller = new AbortController();
   const id = setTimeout(() => {
@@ -23,7 +26,7 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({ action: 'getUser', nickname }),
+      body: JSON.stringify({ action: 'getUser', nickname: sanitizedNickname }),
       redirect: 'follow',
       signal: controller.signal
     });
@@ -44,6 +47,9 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
             magic_magnifier: Number(fullState.items?.magic_magnifier) || 0,
             lucky_horseshoe: Number(fullState.items?.lucky_horseshoe) || Number(fullState.items?.magnet) || Number(result.data.magnet) || 0,
             golden_crown: Number(fullState.items?.golden_crown) || 0,
+            answer_magnet: Number(fullState.items?.answer_magnet) || 0,
+            lucky_dice: Number(fullState.items?.lucky_dice) || 0,
+            resurrection_feather: Number(fullState.items?.resurrection_feather) || 0,
           }
         };
       } catch (e) {
@@ -68,6 +74,7 @@ export const fetchUserData = async (nickname: string): Promise<UserState | null>
 export const syncUserData = async (state: UserState, totalAttempted: number = 0) => {
   if (!API_URL) return;
   
+  const sanitizedNickname = sanitizeInput(state.nickname);
   const accuracy = totalAttempted > 0 ? Math.round((state.total_score / totalAttempted) * 100) : 0;
   
   const controller = new AbortController();
@@ -85,12 +92,12 @@ export const syncUserData = async (state: UserState, totalAttempted: number = 0)
       },
       body: JSON.stringify({
         action: 'saveUser',
-        nickname: state.nickname,
+        nickname: sanitizedNickname,
         level: state.unlocked_stages.length,
         gold: state.gold,
         solvedCount: state.total_score,
         accuracy: accuracy,
-        wrongNote: JSON.stringify(state),
+        wrongNote: JSON.stringify({ ...state, nickname: sanitizedNickname }),
       }),
       redirect: 'follow',
       signal: controller.signal

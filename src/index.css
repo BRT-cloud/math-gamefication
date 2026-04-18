@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquareRound@1.0/nanumsquareround.css');
-@import url('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
 
 @theme {
   --font-sans: "NanumSquareRound", ui-sans-serif, system-ui, sans-serif;
